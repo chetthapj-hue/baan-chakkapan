@@ -1,57 +1,59 @@
-import { Home, Search, SlidersHorizontal } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import ProjectCard from '../components/ProjectCard'
-import { projectStatuses, projectTypes } from '../data/mockData'
-import { getPublishedProjects } from '../services/projectService'
+import { Home, Search, SlidersHorizontal } from "lucide-react";
+import { useMemo, useState } from "react";
+import ProjectCard from "../components/ProjectCard";
+import { projectStatuses, projectTypes } from "../data/mockData";
+import { getPublishedProjects } from "../services/projectService";
 
 const priceRanges = [
-  { label: 'ทุกช่วงราคา', value: 'all' },
-  { label: 'ไม่เกิน 3 ล้านบาท', value: 'under-3' },
-  { label: '3-5 ล้านบาท', value: '3-5' },
-  { label: 'มากกว่า 5 ล้านบาท', value: 'over-5' },
-]
+  { label: "ทุกช่วงราคา", value: "all" },
+  { label: "ไม่เกิน 3 ล้านบาท", value: "under-3" },
+  { label: "3-5 ล้านบาท", value: "3-5" },
+  { label: "มากกว่า 5 ล้านบาท", value: "over-5" },
+];
 
 const Projects = () => {
   const [filters, setFilters] = useState({
-    search: '',
-    type: 'all',
-    status: 'all',
-    price: 'all',
-  })
+    search: "",
+    type: "all",
+    status: "all",
+    price: "all",
+  });
 
-  const projects = getPublishedProjects()
+  const projects = getPublishedProjects();
   const modernCount = projects.filter(
-    (project) => project.type === 'บ้านโมเดิร์น' || project.title.includes('โมเดิร์น'),
-  ).length
+    (project) =>
+      project.type === "บ้านโมเดิร์น" || project.title.includes("โมเดิร์น"),
+  ).length;
 
   const filteredProjects = useMemo(
     () =>
       projects.filter((project) => {
         const searchMatch = project.title
           .toLowerCase()
-          .includes(filters.search.toLowerCase())
-        const typeMatch = filters.type === 'all' || project.type === filters.type
+          .includes(filters.search.toLowerCase());
+        const typeMatch =
+          filters.type === "all" || project.type === filters.type;
         const statusMatch =
-          filters.status === 'all' || project.status === filters.status
-        const price = Number(project.priceValue)
+          filters.status === "all" || project.status === filters.status;
+        const price = Number(project.priceValue);
         const priceMatch =
-          filters.price === 'all' ||
-          (filters.price === 'under-3' && price < 3000000) ||
-          (filters.price === '3-5' && price >= 3000000 && price <= 5000000) ||
-          (filters.price === 'over-5' && price > 5000000)
+          filters.price === "all" ||
+          (filters.price === "under-3" && price < 3000000) ||
+          (filters.price === "3-5" && price >= 3000000 && price <= 5000000) ||
+          (filters.price === "over-5" && price > 5000000);
 
-        return searchMatch && typeMatch && statusMatch && priceMatch
+        return searchMatch && typeMatch && statusMatch && priceMatch;
       }),
     [projects, filters],
-  )
+  );
 
   const updateFilter = (name, value) => {
-    setFilters((current) => ({ ...current, [name]: value }))
-  }
+    setFilters((current) => ({ ...current, [name]: value }));
+  };
 
   return (
     <>
-      <section className="relative overflow-hidden bg-[#0E4F52] py-16 text-white">
+      <section className="relative overflow-hidden bg-[#106772] py-16 text-white">
         <div className="absolute inset-x-0 bottom-0 h-px bg-[#B28A55]" />
         <div className="container-page">
           <p className="section-kicker">Projects</p>
@@ -59,13 +61,14 @@ const Projects = () => {
             ผลงานก่อสร้างและแบบบ้านโมเดิร์น
           </h1>
           <p className="mt-4 max-w-2xl leading-8 text-white/76">
-            ค้นหาแบบบ้านตามราคา ประเภทงาน และสถานะ พร้อมดูรายละเอียดครบทั้งรูป ราคา พื้นที่ ห้องนอน ห้องน้ำ และแปลน
+            ค้นหาแบบบ้านตามราคา ประเภทงาน และสถานะ พร้อมดูรายละเอียดครบทั้งรูป
+            ราคา พื้นที่ ห้องนอน ห้องน้ำ และแปลน
           </p>
           <div className="mt-8 grid gap-3 md:grid-cols-3">
             {[
-              [`${projects.length}`, 'แบบบ้านทั้งหมด'],
-              [`${modernCount}`, 'แบบโมเดิร์น'],
-              ['100%', 'มีแปลนประกอบ'],
+              [`${projects.length}`, "แบบบ้านทั้งหมด"],
+              [`${modernCount}`, "แบบโมเดิร์น"],
+              ["100%", "มีแปลนประกอบ"],
             ].map(([value, label]) => (
               <div key={label} className="surface-dark rounded-lg p-5">
                 <p className="text-3xl font-black text-white">{value}</p>
@@ -89,9 +92,11 @@ const Projects = () => {
                   size={18}
                 />
                 <input
-                  className="form-field pl-10"
+                  className="form-field !pl-10"
                   value={filters.search}
-                  onChange={(event) => updateFilter('search', event.target.value)}
+                  onChange={(event) =>
+                    updateFilter("search", event.target.value)
+                  }
                   placeholder="ค้นหาจากชื่อผลงาน"
                   aria-label="ค้นหาจากชื่อผลงาน"
                 />
@@ -99,7 +104,7 @@ const Projects = () => {
               <select
                 className="form-field"
                 value={filters.type}
-                onChange={(event) => updateFilter('type', event.target.value)}
+                onChange={(event) => updateFilter("type", event.target.value)}
                 aria-label="กรองประเภทบ้าน"
               >
                 <option value="all">ทุกประเภทบ้าน</option>
@@ -112,7 +117,7 @@ const Projects = () => {
               <select
                 className="form-field"
                 value={filters.status}
-                onChange={(event) => updateFilter('status', event.target.value)}
+                onChange={(event) => updateFilter("status", event.target.value)}
                 aria-label="กรองสถานะงาน"
               >
                 <option value="all">ทุกสถานะ</option>
@@ -125,7 +130,7 @@ const Projects = () => {
               <select
                 className="form-field"
                 value={filters.price}
-                onChange={(event) => updateFilter('price', event.target.value)}
+                onChange={(event) => updateFilter("price", event.target.value)}
                 aria-label="กรองช่วงราคา"
               >
                 {priceRanges.map((range) => (
@@ -157,7 +162,7 @@ const Projects = () => {
         </div>
       </section>
     </>
-  )
-}
+  );
+};
 
-export default Projects
+export default Projects;

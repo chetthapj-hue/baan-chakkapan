@@ -1,7 +1,7 @@
-import { Mail, MapPin, MessageCircle, Phone, Share2 } from 'lucide-react'
-import { Link } from 'react-router-dom'
-import { companyInfo } from '../data/mockData'
-import Logo from './Logo'
+import { Mail, MapPin, MessageCircle, Phone, Share2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { companyInfo } from "../data/mockData";
+import Logo from "./Logo";
 
 const Footer = () => (
   <footer className="bg-[#0E4F52] text-white">
@@ -9,8 +9,9 @@ const Footer = () => (
       <div className="space-y-5">
         <Logo to="/" inverse />
         <p className="max-w-md text-sm leading-7 text-white/76">
-          บ้านจักรพันธุ์ รับสร้างบ้าน ออกแบบบ้าน และดูแลโครงการ
-          ตั้งแต่แนวคิดแรกจนถึงส่งมอบงาน
+          รับออกแบบและก่อสร้างบ้านครบวงจร ใส่ใจทุกขั้นตอน ตรวจสอบงานได้
+          พร้อมดูแลหลังส่งมอบ ไม่เคยมีประวัติทิ้งงาน ประสบการณ์มากกว่า 10 ปี
+          มีวิศวกรสถาปนิกควบคุมดูแล
         </p>
       </div>
       <div>
@@ -36,9 +37,9 @@ const Footer = () => (
           <p className="flex items-center gap-2">
             <Phone size={16} /> {companyInfo.phone}
           </p>
-          <p className="flex items-center gap-2">
+          {/* <p className="flex items-center gap-2">
             <MessageCircle size={16} /> LINE {companyInfo.lineId}
-          </p>
+          </p> */}
           <p className="flex items-center gap-2">
             <Share2 size={16} /> {companyInfo.facebook}
           </p>
@@ -51,12 +52,10 @@ const Footer = () => (
         </div>
       </div>
     </div>
-    <div className="border-t border-white/10 py-4 text-center text-xs text-white/58">
+    <div className="border-t border-[#B28A55] py-4 text-center text-xs text-white/58">
       © 2026 บ้านจักรพันธุ์ สงวนลิขสิทธิ์
     </div>
   </footer>
-)
+);
 
-export default Footer
-
-
+export default Footer;

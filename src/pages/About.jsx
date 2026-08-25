@@ -1,28 +1,40 @@
-import { Award, Building2, ShieldCheck, Users } from 'lucide-react'
-import ImageWithFallback from '../components/ImageWithFallback'
-import { houseImages } from '../data/mockData'
+import { Award, Building2, ShieldCheck, Users } from "lucide-react";
+import ImageWithFallback from "../components/ImageWithFallback";
+import { houseImages } from "../data/mockData";
 
 const stats = [
-  ['120+', 'บ้านที่ส่งมอบ'],
-  ['12 ปี', 'ประสบการณ์ทีมงาน'],
-  ['35+', 'ทีมช่างและผู้ประสานงาน'],
-  ['96%', 'ความพึงพอใจจากลูกค้า'],
-]
+  ["120+", "บ้านที่ส่งมอบ"],
+  ["12 ปี", "ประสบการณ์ทีมงาน"],
+  ["35+", "ทีมช่างและผู้ประสานงาน"],
+  ["96%", "ความพึงพอใจจากลูกค้า"],
+];
 
 const team = [
-  ['คุณจักรพันธุ์', 'ผู้ประสานงานโครงการ'],
-  ['คุณภัทรา', 'สถาปนิกและที่ปรึกษาแบบบ้าน'],
-  ['คุณธนากร', 'วิศวกรควบคุมงาน'],
-]
+  {
+    name: "กัปตัน",
+    role: "ผู้จัดการโครงการ",
+    phone: "0951916954",
+  },
+  {
+    name: "อ้ายนัทกาวิน",
+    role: "หัวหน้าทีมช่าง",
+    phone: "0995085983",
+  },
+  {
+    name: "ไมค์",
+    role: "ผู้ประสานงาน",
+    phone: "0931793744",
+  },
+];
 
 const About = () => (
   <>
-    <section className="bg-[#0E4F52] py-16 text-white">
+    <section className="bg-[#106772] py-16 text-white">
       <div className="container-page grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
         <div>
           <p className="text-sm font-bold uppercase text-white/75">About Us</p>
           <h1 className="mt-3 text-4xl font-extrabold leading-tight md:text-5xl">
-            บ้านจักรพันธุ์ ทีมรับสร้างบ้านที่เริ่มจากการฟังเจ้าของบ้านให้ชัด
+            บ้านจักรพันธ์ ทีมรับสร้างบ้านที่เริ่มจากการฟังเจ้าของบ้านให้ชัด
           </h1>
           <p className="mt-5 leading-8 text-white/76">
             เราดูแลเจ้าของบ้านตั้งแต่สำรวจที่ดิน ออกแบบ วางงบประมาณ
@@ -49,19 +61,29 @@ const About = () => (
         </div>
         <div className="space-y-5 leading-8 text-[#5e6256]">
           <p>
-            บ้านจักรพันธุ์เป็นทีมออกแบบและรับสร้างบ้าน
-            ที่ดูแลเจ้าของบ้านตั้งแต่สำรวจที่ดิน
-            ออกแบบ วางงบประมาณ ประสานงานก่อสร้าง และส่งมอบบ้านพร้อมรายการตรวจรับ
+            บ้านจักรพันธ์ — เราไม่ได้สร้างเพียงบ้าน แต่สร้างความไว้ใจ
+            บ้านจักรพันธ์ ดำเนินงานด้านการออกแบบและก่อสร้างบ้าน
+            ด้วยความตั้งใจที่จะสร้างบ้านที่มีคุณภาพ ควบคู่ไปกับความซื่อสัตย์
+            ความรับผิดชอบ และการดูแลลูกค้าในทุกขั้นตอน ตลอดระยะเวลากว่า 10 ปี
+            เราได้เรียนรู้ว่า สำหรับเจ้าของบ้าน “บ้านหนึ่งหลัง”
+            ไม่ใช่เพียงสิ่งปลูกสร้าง แต่คือเงินเก็บ ความฝัน และอนาคตของครอบครัว
+            เราจึงให้ความสำคัญตั้งแต่การออกแบบ การเลือกวัสดุ
+            การควบคุมคุณภาพงานก่อสร้าง ไปจนถึงการตรวจสอบและส่งมอบบ้าน
           </p>
           <p>
-            แนวคิดการทำงานคือทำให้เรื่องสร้างบ้านเข้าใจง่ายขึ้น
-            เจ้าของบ้านควรเห็นขอบเขตงาน วัสดุ ระยะเวลา และจุดตัดสินใจที่สำคัญก่อนเริ่มงานจริง
+            เรายึดมั่นในการทำงานอย่างตรงไปตรงมา ไม่ทิ้งงาน ตรวจสอบได้
+            และรับผิดชอบต่อผลงานของเรา
+            พร้อมดูแลลูกค้าต่อเนื่องแม้หลังจากส่งมอบบ้านแล้ว
+            วันนี้บ้านจักรพันธ์ยังคงพัฒนาทีมงาน ระบบการทำงาน
+            และมาตรฐานการก่อสร้างอย่างต่อเนื่อง เพื่อให้ทุกครอบครัวมั่นใจได้ว่า
+            บ้านที่เราสร้างจะเป็นบ้านที่พวกเขาภูมิใจและอยู่อาศัยได้อย่างมีความสุข
+            บ้านจักรพันธ์ “สร้างบ้านดี มีความรับผิดชอบ ถูกใจเจ้าของ”
           </p>
         </div>
       </div>
     </section>
 
-    <section className="section-pad bg-[#0E4F52]">
+    <section className="section-pad bg-[#106772]">
       <div className="container-page grid gap-4 md:grid-cols-4">
         {stats.map(([value, label]) => (
           <div key={label} className="surface rounded-lg p-6">
@@ -77,33 +99,38 @@ const About = () => (
         {[
           {
             icon: Building2,
-            title: 'วิสัยทัศน์',
-            text: 'สร้างบ้านที่สะท้อนตัวตนเจ้าของบ้าน โดยยังคุมงบประมาณและดูแลการใช้งานระยะยาว',
+            title: "วิสัยทัศน์",
+            text: "สร้างบ้านที่สะท้อนตัวตนเจ้าของบ้าน โดยยังคุมงบประมาณและดูแลการใช้งานระยะยาว",
           },
           {
             icon: ShieldCheck,
-            title: 'มาตรฐานงานก่อสร้าง',
-            text: 'กำหนดจุดตรวจงานสำคัญ เช่น โครงสร้าง ระบบไฟ ระบบประปา และงานเก็บรายละเอียดก่อนส่งมอบ',
+            title: "มาตรฐานงานก่อสร้าง",
+            text: "กำหนดจุดตรวจงานสำคัญ เช่น โครงสร้าง ระบบไฟ ระบบประปา และงานเก็บรายละเอียดก่อนส่งมอบ",
           },
           {
             icon: Award,
-            title: 'แนวคิดการทำงาน',
-            text: 'สื่อสารตรงไปตรงมา อธิบายทางเลือก และให้เจ้าของบ้านตัดสินใจจากข้อมูลที่เห็นภาพ',
+            title: "แนวคิดการทำงาน",
+            text: "สื่อสารตรงไปตรงมา อธิบายทางเลือก และให้เจ้าของบ้านตัดสินใจจากข้อมูลที่เห็นภาพ",
           },
         ].map((item) => {
-          const Icon = item.icon
+          const Icon = item.icon;
           return (
-            <article key={item.title} className="rounded-lg border border-[#0E4F52]/10 p-6">
+            <article
+              key={item.title}
+              className="rounded-lg border border-[#0E4F52]/10 p-6"
+            >
               <Icon className="mb-5 text-[#0E4F52]" size={32} />
-              <h2 className="text-xl font-extrabold text-[#0E4F52]">{item.title}</h2>
+              <h2 className="text-xl font-extrabold text-[#0E4F52]">
+                {item.title}
+              </h2>
               <p className="mt-3 leading-7 text-[#5e6256]">{item.text}</p>
             </article>
-          )
+          );
         })}
       </div>
     </section>
 
-    <section className="section-pad bg-[#0E4F52] text-white">
+    <section className="section-pad bg-[#106772] text-white">
       <div className="container-page space-y-8">
         <div>
           <p className="flex items-center gap-2 text-sm font-bold uppercase text-white/75">
@@ -112,24 +139,31 @@ const About = () => (
           <h2 className="mt-2 text-3xl font-extrabold">ทีมงานของเรา</h2>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
-          {team.map(([name, role]) => (
-            <article key={name} className="rounded-lg border border-white/12 bg-white/8 p-6">
-              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-lg bg-white text-xl font-extrabold text-[#0E4F52]">
-                {name.slice(3, 5)}
-              </div>
+          {team.map(({ name, role, phone }) => (
+            <article
+              key={name}
+              className="rounded-lg border border-white/12 bg-white/8 p-6 ring-1 ring-[#B28A55]"
+            >
+              {/* <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-lg bg-white text-xl font-extrabold text-black">
+                {name.slice(0, 2)}
+              </div> */}
+
               <h3 className="text-lg font-extrabold">{name}</h3>
+
               <p className="mt-2 text-sm text-white/72">{role}</p>
+
+              <a
+                href={`tel:${phone}`}
+                className="mt-2 block text-sm font-semibold text-[#e7c58f] hover:text-white"
+              >
+                โทร: {phone}
+              </a>
             </article>
           ))}
         </div>
       </div>
     </section>
   </>
-)
+);
 
-export default About
-
-
-
-
-
+export default About;
