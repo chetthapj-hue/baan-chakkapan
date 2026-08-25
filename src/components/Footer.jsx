@@ -37,9 +37,9 @@ const Footer = () => (
           <p className="flex items-center gap-2">
             <Phone size={16} /> {companyInfo.phone}
           </p>
-          {/* <p className="flex items-center gap-2">
+          <p className="flex items-center gap-2">
             <MessageCircle size={16} /> LINE {companyInfo.lineId}
-          </p> */}
+          </p>
           <p className="flex items-center gap-2">
             <Share2 size={16} /> {companyInfo.facebook}
           </p>
