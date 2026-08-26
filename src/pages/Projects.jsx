@@ -6,7 +6,7 @@ import { getPublishedProjects } from "../services/projectService";
 
 const priceRanges = [
   { label: "ทุกช่วงราคา", value: "all" },
-  { label: "ไม่เกิน 3 ล้านบาท", value: "under-3" },
+  { label: "ไม่เกิน 1 ล้านบาท", value: "under-1" },
   { label: "3-5 ล้านบาท", value: "3-5" },
   { label: "มากกว่า 5 ล้านบาท", value: "over-5" },
 ];
@@ -38,7 +38,7 @@ const Projects = () => {
         const price = Number(project.priceValue);
         const priceMatch =
           filters.price === "all" ||
-          (filters.price === "under-3" && price < 3000000) ||
+          (filters.price === "under-1" && price < 1000000) ||
           (filters.price === "3-5" && price >= 3000000 && price <= 5000000) ||
           (filters.price === "over-5" && price > 5000000);
 
