@@ -58,7 +58,7 @@ const Contact = () => {
         <div className="container-page">
           <p className="text-sm font-bold uppercase text-white/75">Contact</p>
           <h1 className="mt-3 max-w-3xl text-4xl font-extrabold leading-tight md:text-5xl">
-            คุยกับบ้านจักรพันธุ์เรื่องบ้านที่อยากสร้าง
+            คุยกับบ้านจักรพันธ์เรื่องบ้านที่อยากสร้าง
           </h1>
           <p className="mt-4 max-w-2xl leading-8 text-white/76">
             ส่งรายละเอียดบ้านที่อยากสร้าง ทีมงานจะช่วยประเมินแนวทาง งบประมาณ

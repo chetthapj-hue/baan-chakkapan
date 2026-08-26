@@ -6,7 +6,7 @@ const Logo = ({ compact = false, inverse = false, to = "/" }) => {
     <div className="flex items-center gap-3">
       <img
         src={logoImg}
-        alt="บ้านจักรพันธุ์"
+        alt="บ้านจักรพันธ์"
         className="h-14 w-14 shrink-0 object-contain"
       />
 
@@ -17,7 +17,7 @@ const Logo = ({ compact = false, inverse = false, to = "/" }) => {
               inverse ? "text-white" : "text-[#0E4F52]"
             }`}
           >
-            บ้านจักรพันธุ์
+            บ้านจักรพันธ์
           </span>
 
           <span
@@ -37,7 +37,7 @@ const Logo = ({ compact = false, inverse = false, to = "/" }) => {
   return (
     <Link
       to={to}
-      aria-label="กลับสู่หน้าแรก บ้านจักรพันธุ์"
+      aria-label="กลับสู่หน้าแรก บ้านจักรพันธ์"
       className="inline-flex"
     >
       {content}
