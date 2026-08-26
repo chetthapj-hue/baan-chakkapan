@@ -279,7 +279,7 @@ const Home = () => {
           <div>
             <p className="section-kicker">Why Us</p>
             <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
-              เหตุผลที่ลูกค้าเลือกบ้านจักรพันธุ์
+              เหตุผลที่ลูกค้าเลือกบ้านจักรพันธ์
             </h2>
           </div>
           <div className="grid gap-4">

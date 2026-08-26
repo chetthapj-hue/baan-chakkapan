@@ -32,7 +32,7 @@ const Footer = () => (
         </div>
       </div>
       <div>
-        <h2 className="mb-4 text-base font-bold">ติดต่อบ้านจักรพันธุ์</h2>
+        <h2 className="mb-4 text-base font-bold">ติดต่อบ้านจักรพันธ์</h2>
         <div className="grid gap-3 text-sm text-white/78">
           <p className="flex items-center gap-2">
             <Phone size={16} /> {companyInfo.phone}
@@ -53,7 +53,7 @@ const Footer = () => (
       </div>
     </div>
     <div className="border-t border-[#B28A55] py-4 text-center text-xs text-white/58">
-      © 2026 บ้านจักรพันธุ์ สงวนลิขสิทธิ์
+      © 2026 บ้านจักรพันธ์ สงวนลิขสิทธิ์
     </div>
   </footer>
 );

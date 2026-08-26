@@ -471,7 +471,7 @@ export const seedProjects = baseSeedProjects.map((project, index) => ({
 export const companyInfo = {
   phone: '083 481 8025',
   lineId: 'jochak2028',
-  facebook: 'บ้านจักรพันธุ์',
+  facebook: 'บ้านจักรพันธ์',
   email: 'jochakkapan@gmail.com',
   hours: 'จันทร์-เสาร์ 09:00-18:00 น.',
   address: 'เชียงใหม่, Chiang Mai, Thailand, 50160',
