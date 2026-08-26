@@ -112,8 +112,7 @@ const Home = () => {
           <div className="grid w-full gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
             <div className="max-w-3xl space-y-8">
               <span className="inline-flex items-center gap-2 rounded-full border border-[#B28A55]/70 bg-[#b5dee4dc]/62 px-4 py-2 text-sm font-extrabold text-white">
-                <Sparkles size={16} /> รับสร้างบ้านโมเดิร์น ออกแบบ
-                และดูแลงานครบวงจร
+                <Sparkles size={16} /> รับสร้างบ้าน ออกแบบ และดูแลงานครบวงจร
               </span>
               <div className="space-y-5">
                 <div className="gold-rule" />
@@ -131,7 +130,7 @@ const Home = () => {
               </div>
               <div className="flex flex-wrap gap-3">
                 <Link to="/projects" className="btn-secondary">
-                  ชมแบบบ้านโมเดิร์น <ArrowRight size={18} />
+                  ชมแบบบ้าน <ArrowRight size={18} />
                 </Link>
                 <Link
                   to="/contact"
@@ -194,7 +193,7 @@ const Home = () => {
             <div className="max-w-2xl">
               <p className="section-kicker">Featured Projects</p>
               <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
-                แบบบ้านโมเดิร์นแนะนำ
+                แบบบ้านแนะนำ
               </h2>
               <p className="mt-3 leading-8 text-white/72">
                 รวมแบบบ้านที่มีรูป ราคา พื้นที่ ห้องนอน ห้องน้ำ
