@@ -7,6 +7,7 @@ import { demoAdmin, isAdminLoggedIn, loginAdmin } from '../../services/authServi
 const AdminLogin = () => {
   const [credentials, setCredentials] = useState({ username: '', password: '' })
   const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const navigate = useNavigate()
 
   if (isAdminLoggedIn()) return <Navigate to="/admin" replace />
@@ -16,9 +17,12 @@ const AdminLogin = () => {
     setCredentials((current) => ({ ...current, [name]: value }))
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    const success = loginAdmin(credentials)
+    setIsSubmitting(true)
+    const success = await loginAdmin(credentials)
+    setIsSubmitting(false)
+
     if (!success) {
       setError('Username หรือ Password ไม่ถูกต้อง')
       return
@@ -67,7 +71,7 @@ const AdminLogin = () => {
             />
           </label>
           {error && <p className="text-sm font-bold text-red-600">{error}</p>}
-          <button type="submit" className="btn-primary w-full">
+          <button type="submit" className="btn-primary w-full" disabled={isSubmitting}>
             เข้าสู่ระบบแอดมิน
           </button>
           <Link to="/" className="text-center text-sm font-bold text-[#0E4F52]">

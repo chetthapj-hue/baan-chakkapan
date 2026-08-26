@@ -1,4 +1,5 @@
-﻿import { createDefaultFloorPlan, seedProjects } from '../data/mockData'
+import { createDefaultFloorPlan, seedProjects } from '../data/mockData'
+import { apiRequest, isApiEnabled } from './apiClient'
 import { storage, storageKeys } from './storageService'
 
 const seedProjectById = new Map(seedProjects.map((project) => [project.id, project]))
@@ -31,17 +32,17 @@ const ensureProjects = () => {
   return migratedProjects
 }
 
-export const getProjects = () =>
+const getLocalProjects = () =>
   ensureProjects().sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
 
-export const getPublishedProjects = () =>
-  getProjects().filter((project) => project.publishStatus === 'published')
+const getLocalPublishedProjects = () =>
+  getLocalProjects().filter((project) => project.publishStatus === 'published')
 
-export const getProjectById = (id) =>
-  getProjects().find((project) => project.id === id || project.slug === id)
+const getLocalProjectById = (id) =>
+  getLocalProjects().find((project) => project.id === id || project.slug === id)
 
-export const saveProject = (project) => {
-  const projects = getProjects()
+const saveLocalProject = (project) => {
+  const projects = getLocalProjects()
   const now = new Date().toISOString()
   const id = project.id || project.slug || `project-${Date.now()}`
   const nextProject = {
@@ -70,13 +71,13 @@ export const saveProject = (project) => {
   return nextProject
 }
 
-export const deleteProject = (id) => {
-  const nextProjects = getProjects().filter((project) => project.id !== id)
+const deleteLocalProject = (id) => {
+  const nextProjects = getLocalProjects().filter((project) => project.id !== id)
   storage.writeJson(storageKeys.projects, nextProjects)
 }
 
-export const togglePublishStatus = (id) => {
-  const projects = getProjects()
+const toggleLocalPublishStatus = (id) => {
+  const projects = getLocalProjects()
   let updatedProject = null
 
   const nextProjects = projects.map((project) => {
@@ -94,3 +95,61 @@ export const togglePublishStatus = (id) => {
   return updatedProject
 }
 
+export const getProjects = async () => {
+  if (isApiEnabled) return apiRequest('/projects', { auth: true })
+  return getLocalProjects()
+}
+
+export const getPublishedProjects = async () => {
+  if (isApiEnabled) return apiRequest('/projects?publishStatus=published')
+  return getLocalPublishedProjects()
+}
+
+export const getProjectById = async (id, options = {}) => {
+  if (isApiEnabled) {
+    return apiRequest(`/projects/${encodeURIComponent(id)}`, {
+      auth: options.includeDraft,
+    })
+  }
+
+  return getLocalProjectById(id)
+}
+
+export const saveProject = async (project) => {
+  if (isApiEnabled) {
+    const id = project.id || project.slug
+    const path = id ? `/projects/${encodeURIComponent(id)}` : '/projects'
+    const method = id ? 'PUT' : 'POST'
+
+    return apiRequest(path, {
+      method,
+      auth: true,
+      body: project,
+    })
+  }
+
+  return saveLocalProject(project)
+}
+
+export const deleteProject = async (id) => {
+  if (isApiEnabled) {
+    await apiRequest(`/projects/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      auth: true,
+    })
+    return
+  }
+
+  deleteLocalProject(id)
+}
+
+export const togglePublishStatus = async (id) => {
+  if (isApiEnabled) {
+    return apiRequest(`/projects/${encodeURIComponent(id)}/publish-status`, {
+      method: 'PATCH',
+      auth: true,
+    })
+  }
+
+  return toggleLocalPublishStatus(id)
+}

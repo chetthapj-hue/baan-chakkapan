@@ -9,6 +9,7 @@
 - Gallery พร้อม Lightbox ในหน้ารายละเอียดผลงาน
 - แบบฟอร์มติดต่อพร้อม validation และบันทึกข้อความตัวอย่างลง `localStorage`
 - ระบบแอดมินสาธิตสำหรับเพิ่ม แก้ไข ลบ เปลี่ยนสถานะเผยแพร่ และจัดการผลงาน
+- ระบบเมนแอดมินสำหรับสร้างและลบแอดมิน mock พร้อมชื่อแอดมิน
 - Seed ข้อมูล Mock อัตโนมัติครั้งแรก โดยไม่เขียนทับข้อมูลที่ผู้ใช้เพิ่มเอง
 
 ## วิธีติดตั้ง
@@ -49,13 +50,15 @@ npm.cmd run dev
 - `/admin/projects` หน้าจัดการผลงาน
 - `/admin/projects/new` หน้าเพิ่มผลงาน
 - `/admin/projects/:id/edit` หน้าแก้ไขผลงาน
+- `/admin/admins` หน้าจัดการแอดมิน
 
 ## บัญชีแอดมินทดลอง
 
+- ชื่อแอดมิน: `เมนแอดมิน`
 - Username: `admin`
 - Password: `baan1234`
 
-บัญชีนี้ใช้สำหรับสาธิต frontend เท่านั้น ห้ามนำไปใช้กับ Production
+บัญชีนี้เป็นเมนแอดมินสำหรับสาธิต frontend สามารถสร้างและลบแอดมิน mock คนอื่นได้ ห้ามนำไปใช้กับ Production
 
 ## โครงสร้างโปรเจกต์
 
@@ -102,4 +105,37 @@ npm run build
 npm.cmd run lint
 npm.cmd run build
 ```
+
+## Backend API สำหรับเชื่อมต่อ
+
+รอบนี้มี backend dev server อยู่ที่ `C:\Coding\baan-chakkapan-back-end` แล้ว โดยตั้งใจให้รันได้ด้วย Node.js built-in API ก่อน ยังไม่ต้องติดตั้ง dependency เพิ่ม และ backend code ทั้งหมดอยู่ในโฟลเดอร์แยกนี้
+
+```bash
+npm run server
+```
+
+API จะเปิดที่ `http://localhost:4000/api` และจะ seed ข้อมูล mock เดิมลงไฟล์ `C:\Coding\baan-chakkapan-back-end\data\projects.json` อัตโนมัติครั้งแรก ส่วนข้อความติดต่อจะอยู่ใน `C:\Coding\baan-chakkapan-back-end\data\contacts.json`
+
+ดูรายละเอียด backend เพิ่มเติมได้ที่ `C:\Coding\baan-chakkapan-back-end\README.md`
+
+ถ้าต้องการให้ frontend เรียก backend ให้สร้างไฟล์ `.env` จาก `.env.example` แล้วตั้งค่า:
+
+```bash
+VITE_API_BASE_URL=http://localhost:4000/api
+```
+
+Endpoint หลัก:
+
+- `POST /api/auth/login`
+- `GET /api/projects?publishStatus=published`
+- `GET /api/projects`
+- `GET /api/projects/:id`
+- `POST /api/projects`
+- `PUT /api/projects/:id`
+- `PATCH /api/projects/:id/publish-status`
+- `DELETE /api/projects/:id`
+- `POST /api/contacts`
+- `GET /api/contacts`
+
+Endpoint admin ต้องส่ง `Authorization: Bearer <token>` จาก login ยกเว้นรายการ project ที่เผยแพร่และการส่ง contact form
 

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "server": "npm --prefix ../baan-chakkapan-back-end start",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"

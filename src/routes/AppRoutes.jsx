@@ -12,6 +12,7 @@ import AdminLogin from '../pages/admin/AdminLogin'
 import AdminDashboard from '../pages/admin/AdminDashboard'
 import AdminProjects from '../pages/admin/AdminProjects'
 import ProjectForm from '../pages/admin/ProjectForm'
+import AdminUsers from '../pages/admin/AdminUsers'
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -31,6 +32,7 @@ const AppRoutes = () => (
           <Route path="projects" element={<AdminProjects />} />
           <Route path="projects/new" element={<ProjectForm mode="new" />} />
           <Route path="projects/:id/edit" element={<ProjectForm mode="edit" />} />
+          <Route path="admins" element={<AdminUsers />} />
         </Route>
       </Route>
 

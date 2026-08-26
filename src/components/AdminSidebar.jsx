@@ -1,7 +1,8 @@
-﻿import { FolderKanban, LayoutDashboard, LogOut } from 'lucide-react'
+import { FolderKanban, LayoutDashboard, LogOut, Users } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import Logo from './Logo'
+import { getCurrentAdmin, getRoleLabel } from '../services/adminUserService'
 import { logoutAdmin } from '../services/authService'
+import Logo from './Logo'
 
 const adminNavClass = ({ isActive }) =>
   `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-bold transition ${
@@ -12,6 +13,7 @@ const adminNavClass = ({ isActive }) =>
 
 const AdminSidebar = () => {
   const navigate = useNavigate()
+  const currentAdmin = getCurrentAdmin()
 
   const handleLogout = () => {
     logoutAdmin()
@@ -30,7 +32,20 @@ const AdminSidebar = () => {
         <NavLink to="/admin/projects" className={adminNavClass}>
           <FolderKanban size={18} /> จัดการผลงาน
         </NavLink>
+        <NavLink to="/admin/admins" className={adminNavClass}>
+          <Users size={18} /> จัดการแอดมิน
+        </NavLink>
       </nav>
+      {currentAdmin && (
+        <div className="mt-6 rounded-lg border border-white/12 bg-white/8 p-3">
+          <p className="text-sm font-extrabold text-white">
+            {currentAdmin.name || currentAdmin.username}
+          </p>
+          <p className="mt-1 text-xs font-bold text-white/60">
+            {getRoleLabel(currentAdmin.role)}
+          </p>
+        </div>
+      )}
       <button
         type="button"
         className="mt-auto flex items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-bold text-white/76 transition hover:bg-white/10 hover:text-white"
@@ -43,6 +58,3 @@ const AdminSidebar = () => {
 }
 
 export default AdminSidebar
-
-
-

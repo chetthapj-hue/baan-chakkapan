@@ -41,14 +41,18 @@ const Contact = () => {
     setForm((current) => ({ ...current, [name]: value }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (!validate()) return;
 
-    saveContact(form);
-    setForm(initialForm);
-    setErrors({});
+    try {
+      await saveContact(form);
+      setForm(initialForm);
+      setErrors({});
     showToast("ส่งข้อความเรียบร้อย ทีมงานจะติดต่อกลับตามข้อมูลที่ให้ไว้");
+    } catch {
+      showToast("ส่งข้อความไม่สำเร็จ กรุณาลองใหม่", "error");
+    }
   };
 
   return (

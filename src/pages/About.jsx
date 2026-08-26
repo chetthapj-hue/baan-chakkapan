@@ -11,19 +11,39 @@ const stats = [
 
 const team = [
   {
-    name: "กัปตัน",
-    role: "ผู้จัดการโครงการ",
-    phone: "0951916954",
+    id: "team-member-1",
+    nickname: "จักร",
+    fullName: "พันธนนท์ สุปินนะ",
+    role: "ผู้ก่ตั้งบริษัท",
+    phone: "083-481-8025",
   },
   {
-    name: "อ้ายนัทกาวิน",
-    role: "หัวหน้าทีมช่าง",
-    phone: "0995085983",
+    id: "team-member-2",
+    nickname: "กัปตัน",
+    fullName: "ชนิตพล ขันขาว",
+    role: "สถาปนิก[สถ.บ.]",
+    phone: "095-191-6954",
   },
   {
-    name: "ไมค์",
-    role: "ผู้ประสานงาน",
+    id: "team-member-3",
+    nickname: "นัท",
+    fullName: "ณัฐพล กาวิล",
+    role: "ผู้สถาปนิก",
+    phone: "099-508-5983",
+  },
+  {
+    id: "team-member-4",
+    nickname: "ไอซ์",
+    fullName: "กรรชัย จันจินา",
+    role: "โฟร์แมน",
     phone: "0931793744",
+  },
+  {
+    id: "team-member-5",
+    nickname: "ไมค์",
+    fullName: "วทัญญู แก้วเกตุ",
+    role: "ผู้ประสานงานและสื่อดิจิทัล",
+    phone: "093-179-3744",
   },
 ];
 
@@ -138,17 +158,25 @@ const About = () => (
           </p>
           <h2 className="mt-2 text-3xl font-extrabold">ทีมงานของเรา</h2>
         </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          {team.map(({ name, role, phone }) => (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          {team.map(({ id, nickname, fullName, role, phone }) => (
             <article
-              key={name}
+              key={id}
               className="rounded-lg border border-white/12 bg-white/8 p-6 ring-1 ring-[#B28A55]"
             >
               {/* <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-lg bg-white text-xl font-extrabold text-black">
-                {name.slice(0, 2)}
+                {nickname.slice(0, 2)}
               </div> */}
 
-              <h3 className="text-lg font-extrabold">{name}</h3>
+              <p className="text-xs font-bold uppercase text-white/60">
+                ชื่อเล่น
+              </p>
+              <h3 className="mt-1 text-lg font-extrabold">{nickname}</h3>
+
+              <p className="mt-4 text-xs font-bold uppercase text-white/60">
+                ชื่อ-นามสกุล
+              </p>
+              <p className="mt-1 font-semibold text-white">{fullName}</p>
 
               <p className="mt-2 text-sm text-white/72">{role}</p>
 

@@ -1,13 +1,31 @@
-﻿import { Building2, FolderKanban, Mail, Plus, Timer } from 'lucide-react'
+import { Building2, FolderKanban, Mail, Plus, Timer } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import StatusBadge from '../../components/StatusBadge'
-import { getContacts } from '../../services/contactService'
 import { useProjects } from '../../hooks/useProjects'
+import { getContacts } from '../../services/contactService'
 import { formatDateThai } from '../../utils/formatters'
 
 const AdminDashboard = () => {
   const { projects } = useProjects()
-  const contacts = getContacts()
+  const [contacts, setContacts] = useState([])
+
+  useEffect(() => {
+    let active = true
+
+    getContacts()
+      .then((nextContacts) => {
+        if (active) setContacts(nextContacts)
+      })
+      .catch(() => {
+        if (active) setContacts([])
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
   const completed = projects.filter((project) => project.status === 'สร้างเสร็จแล้ว')
   const building = projects.filter((project) => project.status === 'กำลังก่อสร้าง')
   const latestProjects = projects.slice(0, 5)
@@ -74,6 +92,3 @@ const AdminDashboard = () => {
 }
 
 export default AdminDashboard
-
-
-

@@ -15,6 +15,7 @@ export const storageKeys = {
   projects: 'baanjakkraphan.projects',
   contacts: 'baanjakkraphan.contacts',
   adminSession: 'baanjakkraphan.adminSession',
+  admins: 'baanjakkraphan.admins',
 }
 
 export const storage = {
