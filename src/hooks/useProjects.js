@@ -1,4 +1,4 @@
-﻿import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   deleteProject,
   getProjects,
@@ -7,30 +7,51 @@ import {
 } from '../services/projectService'
 
 export const useProjects = () => {
-  const [projects, setProjects] = useState(() => getProjects())
+  const [projects, setProjects] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  const refresh = useCallback(() => {
-    setProjects(getProjects())
+  const refresh = useCallback(async () => {
+    setLoading(true)
+    try {
+      setProjects(await getProjects())
+      setError('')
+    } catch (nextError) {
+      setError(nextError.message)
+      setProjects([])
+    } finally {
+      setLoading(false)
+    }
   }, [])
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      refresh()
+    }, 0)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [refresh])
 
   return {
     projects,
+    loading,
+    error,
     refresh,
-    save: (project) => {
-      const savedProject = saveProject(project)
-      refresh()
+    save: async (project) => {
+      const savedProject = await saveProject(project)
+      await refresh()
       return savedProject
     },
-    remove: (id) => {
-      deleteProject(id)
-      refresh()
+    remove: async (id) => {
+      await deleteProject(id)
+      await refresh()
     },
-    togglePublish: (id) => {
-      const updatedProject = togglePublishStatus(id)
-      refresh()
+    togglePublish: async (id) => {
+      const updatedProject = await togglePublishStatus(id)
+      await refresh()
       return updatedProject
     },
   }
 }
-
-

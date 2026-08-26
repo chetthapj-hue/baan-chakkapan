@@ -1,5 +1,5 @@
 ﻿import { ImagePlus, Save, Trash2, Upload } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import FormInput from '../../components/FormInput'
 import ImageWithFallback from '../../components/ImageWithFallback'
@@ -60,14 +60,45 @@ const ProjectForm = ({ mode }) => {
   const navigate = useNavigate()
   const { save } = useProjects()
   const { toast, showToast, clearToast } = useToast()
-  const editingProject = useMemo(() => (id ? getProjectById(id) : null), [id])
-  const [form, setForm] = useState(
-    mode === 'edit' && editingProject
-      ? normalizeProjectForForm(editingProject)
-      : emptyProject,
-  )
+  const [editingProject, setEditingProject] = useState(null)
+  const [loadingProject, setLoadingProject] = useState(mode === 'edit')
+  const [isSaving, setIsSaving] = useState(false)
+  const [form, setForm] = useState(emptyProject)
   const [errors, setErrors] = useState({})
   const [imageError, setImageError] = useState('')
+
+  useEffect(() => {
+    let active = true
+
+    const timeoutId = window.setTimeout(() => {
+      if (mode !== 'edit' || !id) {
+        setEditingProject(null)
+        setForm(emptyProject)
+        setLoadingProject(false)
+        return
+      }
+
+      setLoadingProject(true)
+      getProjectById(id, { includeDraft: true })
+        .then((project) => {
+          if (!active) return
+          setEditingProject(project || null)
+          if (project) setForm(normalizeProjectForForm(project))
+        })
+        .catch(() => {
+          if (!active) return
+          setEditingProject(null)
+        })
+        .finally(() => {
+          if (active) setLoadingProject(false)
+        })
+    }, 0)
+
+    return () => {
+      active = false
+      window.clearTimeout(timeoutId)
+    }
+  }, [id, mode])
 
   const update = (name, value) => {
     setForm((current) => ({ ...current, [name]: value }))
@@ -178,7 +209,7 @@ const ProjectForm = ({ mode }) => {
     }))
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
     if (!validate()) {
       showToast('กรุณาตรวจสอบข้อมูลที่จำเป็น', 'error')
@@ -204,9 +235,24 @@ const ProjectForm = ({ mode }) => {
         : [{ url: form.coverImage, alt: form.coverAlt }],
     }
 
-    save(payload)
-    showToast(mode === 'edit' ? 'บันทึกการแก้ไขแล้ว' : 'เพิ่มผลงานใหม่แล้ว')
-    window.setTimeout(() => navigate('/admin/projects'), 700)
+    setIsSaving(true)
+    try {
+      await save(payload)
+      showToast(mode === 'edit' ? 'บันทึกการแก้ไขแล้ว' : 'เพิ่มผลงานใหม่แล้ว')
+      window.setTimeout(() => navigate('/admin/projects'), 700)
+    } catch {
+      showToast('บันทึกไม่สำเร็จ กรุณาลองใหม่', 'error')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  if (loadingProject) {
+    return (
+      <div className="rounded-lg bg-white p-8 text-center text-[#5e6256] shadow-sm">
+        Loading...
+      </div>
+    )
   }
 
   if (mode === 'edit' && !editingProject) {
@@ -483,7 +529,7 @@ const ProjectForm = ({ mode }) => {
           <Link to="/admin/projects" className="btn-ghost">
             ยกเลิก
           </Link>
-          <button type="submit" className="btn-primary">
+          <button type="submit" className="btn-primary" disabled={isSaving}>
             <Save size={18} /> บันทึกผลงาน
           </button>
         </div>

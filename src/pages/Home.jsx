@@ -13,6 +13,7 @@ import {
   Sparkles,
   Wrench,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ContactButtons from "../components/ContactButtons";
 import ImageWithFallback from "../components/ImageWithFallback";
@@ -69,7 +70,24 @@ const buildBrief = [
 ];
 
 const Home = () => {
-  const publishedProjects = getPublishedProjects();
+  const [publishedProjects, setPublishedProjects] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+
+    getPublishedProjects()
+      .then((projects) => {
+        if (active) setPublishedProjects(projects);
+      })
+      .catch(() => {
+        if (active) setPublishedProjects([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const modernProjects = publishedProjects.filter(
     (project) =>
       project.type === "บ้านโมเดิร์น" || project.title.includes("โมเดิร์น"),

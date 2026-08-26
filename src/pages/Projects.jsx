@@ -1,5 +1,5 @@
 import { Home, Search, SlidersHorizontal } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ProjectCard from "../components/ProjectCard";
 import { projectStatuses, projectTypes } from "../data/mockData";
 import { getPublishedProjects } from "../services/projectService";
@@ -12,6 +12,8 @@ const priceRanges = [
 ];
 
 const Projects = () => {
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     search: "",
     type: "all",
@@ -19,7 +21,25 @@ const Projects = () => {
     price: "all",
   });
 
-  const projects = getPublishedProjects();
+  useEffect(() => {
+    let active = true;
+
+    getPublishedProjects()
+      .then((nextProjects) => {
+        if (active) setProjects(nextProjects);
+      })
+      .catch(() => {
+        if (active) setProjects([]);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const modernCount = projects.filter(
     (project) =>
       project.type === "บ้านโมเดิร์น" || project.title.includes("โมเดิร์น"),
@@ -142,7 +162,11 @@ const Projects = () => {
             </div>
           </div>
 
-          {filteredProjects.length > 0 ? (
+          {loading ? (
+            <div className="rounded-lg border border-dashed border-[#0E4F52]/20 bg-white p-10 text-center text-[#5e6256]">
+              Loading...
+            </div>
+          ) : filteredProjects.length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {filteredProjects.map((project) => (
                 <ProjectCard key={project.id} project={project} />

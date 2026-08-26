@@ -22,19 +22,29 @@ const AdminProjects = () => {
     [projects, search],
   )
 
-  const confirmDelete = () => {
-    remove(deleteTarget.id)
-    showToast(`ลบ ${deleteTarget.title} แล้ว`)
-    setDeleteTarget(null)
+  const confirmDelete = async () => {
+    try {
+      await remove(deleteTarget.id)
+      showToast(`ลบ ${deleteTarget.title} แล้ว`)
+      setDeleteTarget(null)
+    } catch {
+      showToast('ลบผลงานไม่สำเร็จ กรุณาลองใหม่', 'error')
+    }
   }
 
-  const handleToggle = (id) => {
-    const updatedProject = togglePublish(id)
-    showToast(
-      updatedProject.publishStatus === 'published'
-        ? 'เปลี่ยนเป็นสถานะเผยแพร่แล้ว'
-        : 'เปลี่ยนเป็นฉบับร่างแล้ว',
-    )
+  const handleToggle = async (id) => {
+    try {
+      const updatedProject = await togglePublish(id)
+      if (!updatedProject) return
+
+      showToast(
+        updatedProject.publishStatus === 'published'
+          ? 'เปลี่ยนเป็นสถานะเผยแพร่แล้ว'
+          : 'เปลี่ยนเป็นฉบับร่างแล้ว',
+      )
+    } catch {
+      showToast('เปลี่ยนสถานะไม่สำเร็จ กรุณาลองใหม่', 'error')
+    }
   }
 
   return (

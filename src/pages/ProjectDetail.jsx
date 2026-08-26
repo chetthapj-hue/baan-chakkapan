@@ -7,6 +7,7 @@ import {
   Layers,
   Ruler,
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import ContactButtons from '../components/ContactButtons'
 import FloorPlan from '../components/FloorPlan'
@@ -28,14 +29,54 @@ const statItems = [
 
 const ProjectDetail = () => {
   const { id } = useParams()
-  const project = getProjectById(id)
+  const [project, setProject] = useState(null)
+  const [relatedProjects, setRelatedProjects] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let active = true
+
+    const timeoutId = window.setTimeout(() => {
+      setLoading(true)
+      Promise.all([getProjectById(id), getPublishedProjects()])
+        .then(([nextProject, publishedProjects]) => {
+          if (!active) return
+          setProject(nextProject)
+          setRelatedProjects(
+            publishedProjects
+              .filter((item) => item.id !== nextProject?.id)
+              .filter(
+                (item) =>
+                  item.type === nextProject?.type || item.status === nextProject?.status,
+              )
+              .slice(0, 3),
+          )
+        })
+        .catch(() => {
+          if (!active) return
+          setProject(null)
+          setRelatedProjects([])
+        })
+        .finally(() => {
+          if (active) setLoading(false)
+        })
+    }, 0)
+
+    return () => {
+      active = false
+      window.clearTimeout(timeoutId)
+    }
+  }, [id])
+
+  if (loading) {
+    return (
+      <section className="grid min-h-[50vh] place-items-center bg-[#F6F8F4] text-[#5e6256]">
+        Loading...
+      </section>
+    )
+  }
 
   if (!project || project.publishStatus !== 'published') return <NotFound />
-
-  const relatedProjects = getPublishedProjects()
-    .filter((item) => item.id !== project.id)
-    .filter((item) => item.type === project.type || item.status === project.status)
-    .slice(0, 3)
 
   return (
     <>
