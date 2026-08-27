@@ -17,7 +17,7 @@ export const getCurrentAdmin = () => {
     ...session,
     id: session.id || session.username,
     name: session.name || session.username,
-    role: session.role || adminRoles.admin,
+    role: session.role || adminRoles.main,
   }
 }
 
