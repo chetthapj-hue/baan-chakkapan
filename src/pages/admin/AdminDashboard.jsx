@@ -3,22 +3,27 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import StatusBadge from '../../components/StatusBadge'
 import { useProjects } from '../../hooks/useProjects'
-import { getContacts } from '../../services/contactService'
+import { getContactStats } from '../../services/contactService'
 import { formatDateThai } from '../../utils/formatters'
 
 const AdminDashboard = () => {
   const { projects } = useProjects()
-  const [contacts, setContacts] = useState([])
+  const [contactStats, setContactStats] = useState({ total: 0, unread: 0 })
 
   useEffect(() => {
     let active = true
 
-    getContacts()
-      .then((nextContacts) => {
-        if (active) setContacts(nextContacts)
+    getContactStats()
+      .then((stats) => {
+        if (active) {
+          setContactStats({
+            total: stats.total || 0,
+            unread: stats.unread || 0,
+          })
+        }
       })
       .catch(() => {
-        if (active) setContacts([])
+        if (active) setContactStats({ total: 0, unread: 0 })
       })
 
     return () => {
@@ -34,7 +39,13 @@ const AdminDashboard = () => {
     { label: 'ผลงานทั้งหมด', value: projects.length, icon: FolderKanban },
     { label: 'สร้างเสร็จแล้ว', value: completed.length, icon: Building2 },
     { label: 'กำลังก่อสร้าง', value: building.length, icon: Timer },
-    { label: 'ข้อความติดต่อ', value: contacts.length, icon: Mail },
+    {
+      label: 'ข้อความติดต่อ',
+      value: contactStats.total,
+      icon: Mail,
+      to: '/admin/contacts',
+      badge: contactStats.unread,
+    },
   ]
 
   return (
@@ -52,12 +63,25 @@ const AdminDashboard = () => {
       <div className="grid gap-4 md:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon
+          const Card = stat.to ? Link : 'div'
+
           return (
-            <div key={stat.label} className="rounded-lg bg-white p-5 shadow-sm">
-              <Icon className="mb-4 text-[#0E4F52]" size={26} />
+            <Card
+              key={stat.label}
+              to={stat.to}
+              className="rounded-lg bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <Icon className="text-[#0E4F52]" size={26} />
+                {stat.badge > 0 && (
+                  <span className="rounded-full bg-[#EAF4F2] px-3 py-1 text-xs font-extrabold text-[#0E4F52]">
+                    ยังไม่อ่าน {stat.badge}
+                  </span>
+                )}
+              </div>
               <p className="text-3xl font-extrabold text-[#0E4F52]">{stat.value}</p>
               <p className="mt-1 text-sm text-[#5e6256]">{stat.label}</p>
-            </div>
+            </Card>
           )
         })}
       </div>

@@ -1,59 +1,75 @@
-import { Mail, MapPin, MessageCircle, Phone, Send } from "lucide-react";
-import { useState } from "react";
-import FormInput from "../components/FormInput";
-import Toast from "../components/Toast";
-import { companyInfo } from "../data/mockData";
-import { saveContact } from "../services/contactService";
-import { useToast } from "../hooks/useToast";
+import { Mail, MapPin, MessageCircle, Phone, Send } from 'lucide-react'
+import { useState } from 'react'
+import FormInput from '../components/FormInput'
+import Toast from '../components/Toast'
+import { companyInfo } from '../data/mockData'
+import { useToast } from '../hooks/useToast'
+import { saveContact } from '../services/contactService'
 
 const initialForm = {
-  name: "",
-  phone: "",
-  email: "",
-  subject: "",
-  message: "",
-};
+  name: '',
+  phone: '',
+  email: '',
+  subject: '',
+  message: '',
+}
 
 const Contact = () => {
-  const [form, setForm] = useState(initialForm);
-  const [errors, setErrors] = useState({});
-  const { toast, showToast, clearToast } = useToast();
+  const [form, setForm] = useState(initialForm)
+  const [errors, setErrors] = useState({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { toast, showToast, clearToast } = useToast()
 
   const validate = () => {
-    const nextErrors = {};
-    if (!form.name.trim()) nextErrors.name = "กรุณากรอกชื่อ";
-    if (!form.phone.trim()) nextErrors.phone = "กรุณากรอกเบอร์โทร";
-    if (!/^[0-9+\-\s]{8,}$/.test(form.phone.trim())) {
-      nextErrors.phone = "กรุณากรอกเบอร์โทรให้ถูกต้อง";
+    const nextErrors = {}
+    const phone = form.phone.trim()
+    const email = form.email.trim()
+
+    if (!form.name.trim()) nextErrors.name = 'กรุณากรอกชื่อ'
+    if (!phone) nextErrors.phone = 'กรุณากรอกเบอร์โทร'
+    if (phone && !/^[0-9+\-\s]{8,}$/.test(phone)) {
+      nextErrors.phone = 'กรุณากรอกเบอร์โทรให้ถูกต้อง'
     }
-    if (!form.email.trim()) nextErrors.email = "กรุณากรอกอีเมล";
-    if (form.email && !/\S+@\S+\.\S+/.test(form.email)) {
-      nextErrors.email = "รูปแบบอีเมลไม่ถูกต้อง";
+    if (!email) nextErrors.email = 'กรุณากรอกอีเมล'
+    if (email && !/\S+@\S+\.\S+/.test(email)) {
+      nextErrors.email = 'รูปแบบอีเมลไม่ถูกต้อง'
     }
-    if (!form.subject.trim()) nextErrors.subject = "กรุณากรอกหัวข้อ";
-    if (!form.message.trim()) nextErrors.message = "กรุณากรอกข้อความ";
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
-  };
+    if (!form.subject.trim()) nextErrors.subject = 'กรุณากรอกหัวข้อ'
+    if (!form.message.trim()) nextErrors.message = 'กรุณากรอกข้อความ'
+
+    setErrors(nextErrors)
+    return Object.keys(nextErrors).length === 0
+  }
 
   const handleChange = (event) => {
-    const { name, value } = event.target;
-    setForm((current) => ({ ...current, [name]: value }));
-  };
+    const { name, value } = event.target
+    setForm((current) => ({ ...current, [name]: value }))
+  }
 
   const handleSubmit = async (event) => {
-    event.preventDefault();
-    if (!validate()) return;
+    event.preventDefault()
+    if (isSubmitting || !validate()) return
 
+    setIsSubmitting(true)
     try {
-      await saveContact(form);
-      setForm(initialForm);
-      setErrors({});
-    showToast("ส่งข้อความเรียบร้อย ทีมงานจะติดต่อกลับตามข้อมูลที่ให้ไว้");
+      await saveContact({
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim(),
+        subject: form.subject.trim(),
+        message: form.message.trim(),
+      })
+      setForm(initialForm)
+      setErrors({})
+      showToast(
+        'ส่งข้อความเรียบร้อย ทีมงานจะติดต่อกลับตามข้อมูลที่ให้ไว้',
+      )
     } catch {
-      showToast("ส่งข้อความไม่สำเร็จ กรุณาลองใหม่", "error");
+      showToast('ส่งข้อความไม่สำเร็จ กรุณาลองใหม่', 'error')
+    } finally {
+      setIsSubmitting(false)
     }
-  };
+  }
 
   return (
     <>
@@ -75,16 +91,16 @@ const Contact = () => {
         <div className="container-page grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="space-y-5">
             {[
-              { icon: Phone, label: "โทร", value: companyInfo.phone },
+              { icon: Phone, label: 'โทร', value: companyInfo.phone },
               {
                 icon: MessageCircle,
-                label: "LINE ID",
+                label: 'LINE ID',
                 value: companyInfo.lineId,
               },
-              { icon: Mail, label: "อีเมล", value: companyInfo.email },
-              { icon: MapPin, label: "ที่อยู่", value: companyInfo.address },
+              { icon: Mail, label: 'อีเมล', value: companyInfo.email },
+              { icon: MapPin, label: 'ที่อยู่', value: companyInfo.address },
             ].map((item) => {
-              const Icon = item.icon;
+              const Icon = item.icon
               return (
                 <div key={item.label} className="surface rounded-lg p-5">
                   <p className="flex items-center gap-2 text-sm font-bold text-[#0E4F52]">
@@ -92,7 +108,7 @@ const Contact = () => {
                   </p>
                   <p className="mt-2 font-bold text-[#0E4F52]">{item.value}</p>
                 </div>
-              );
+              )
             })}
             <div className="surface rounded-lg p-5">
               <p className="font-bold text-[#0E4F52]">เวลาเปิดทำการ</p>
@@ -156,15 +172,19 @@ const Contact = () => {
                 onChange={handleChange}
                 required
               />
-              <button type="submit" className="btn-primary w-fit">
-                <Send size={18} /> ส่งข้อความ
+              <button
+                type="submit"
+                className="btn-primary w-fit disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isSubmitting}
+              >
+                <Send size={18} /> {isSubmitting ? 'กำลังส่ง' : 'ส่งข้อความ'}
               </button>
             </div>
           </form>
         </div>
       </section>
     </>
-  );
-};
+  )
+}
 
-export default Contact;
+export default Contact

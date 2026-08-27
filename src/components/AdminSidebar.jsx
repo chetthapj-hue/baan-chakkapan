@@ -3,9 +3,11 @@ import {
   Home,
   LayoutDashboard,
   LogOut,
+  Mail,
   Settings,
   Users,
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   getCurrentAdmin,
@@ -13,6 +15,7 @@ import {
   isMainAdmin,
 } from '../services/adminUserService'
 import { logoutAdmin } from '../services/authService'
+import { getContactStats } from '../services/contactService'
 import Logo from './Logo'
 
 const adminNavClass = ({ isActive }) =>
@@ -25,6 +28,23 @@ const adminNavClass = ({ isActive }) =>
 const AdminSidebar = () => {
   const navigate = useNavigate()
   const currentAdmin = getCurrentAdmin()
+  const [unreadContacts, setUnreadContacts] = useState(0)
+
+  useEffect(() => {
+    let active = true
+
+    getContactStats()
+      .then((stats) => {
+        if (active) setUnreadContacts(stats.unread || 0)
+      })
+      .catch(() => {
+        if (active) setUnreadContacts(0)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   const handleLogout = () => {
     logoutAdmin()
@@ -45,6 +65,14 @@ const AdminSidebar = () => {
         </NavLink>
         <NavLink to="/admin/house-types" className={adminNavClass}>
           <Home size={18} /> ประเภทบ้าน
+        </NavLink>
+        <NavLink to="/admin/contacts" className={adminNavClass}>
+          <Mail size={18} /> ข้อความติดต่อ
+          {unreadContacts > 0 && (
+            <span className="ml-auto rounded-full bg-white px-2 py-0.5 text-xs font-extrabold text-[#0E4F52]">
+              {unreadContacts}
+            </span>
+          )}
         </NavLink>
         {isMainAdmin() && (
           <NavLink to="/admin/admins" className={adminNavClass}>
