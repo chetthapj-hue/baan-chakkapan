@@ -9,7 +9,7 @@ Frontend สำหรับเว็บไซต์บ้านจักรพ�
 - Gallery และแปลนบ้านในหน้ารายละเอียด
 - ฟอร์มติดต่อที่ส่งข้อมูลเข้า backend
 - ระบบแอดมินสำหรับจัดการผลงานและตั้งค่ารูปหน้าแรก
-- เชื่อม backend ผ่าน `VITE_API_BASE_URL`
+- เชื่อม backend ผ่าน `VITE_API_URL`
 
 ## Setup
 
@@ -20,7 +20,7 @@ npm.cmd install
 สร้างไฟล์ `.env` จาก `.env.example` แล้วตั้งค่า API:
 
 ```env
-VITE_API_BASE_URL=http://localhost:4000/api
+VITE_API_URL=http://localhost:4000/api
 ```
 
 ## Run

@@ -1,6 +1,10 @@
 import { storage, storageKeys } from './storageService'
 
-export const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
+const configuredApiUrl =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV ? import.meta.env.VITE_API_BASE_URL : '')
+
+export const apiBaseUrl = (configuredApiUrl || '').replace(/\/$/, '')
 export const isApiEnabled = Boolean(apiBaseUrl)
 
 const getSession = () => storage.readJson(storageKeys.adminSession, null)
