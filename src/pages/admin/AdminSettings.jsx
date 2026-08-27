@@ -1,90 +1,92 @@
-import { ImagePlus, RotateCcw, Save, Upload } from 'lucide-react'
-import { useState } from 'react'
-import FormInput from '../../components/FormInput'
-import ImageWithFallback from '../../components/ImageWithFallback'
-import Toast from '../../components/Toast'
-import { useToast } from '../../hooks/useToast'
+import { ImagePlus, RotateCcw, Save, Upload } from "lucide-react";
+import { useState } from "react";
+import FormInput from "../../components/FormInput";
+import ImageWithFallback from "../../components/ImageWithFallback";
+import Toast from "../../components/Toast";
+import { useToast } from "../../hooks/useToast";
 import {
   getSiteSettings,
   resetSiteSettings,
   saveSiteSettings,
-} from '../../services/siteSettingsService'
+} from "../../services/siteSettingsService";
 
-const maxImageSize = 2 * 1024 * 1024
+const maxImageSize = 2 * 1024 * 1024;
 
 const readFileAsDataUrl = (file) =>
   new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
 const validateImage = (file) => {
-  if (!file.type.startsWith('image/')) return 'รองรับเฉพาะไฟล์รูปภาพ'
-  if (file.size > maxImageSize) return 'รูปภาพต้องไม่เกิน 2 MB'
-  return ''
-}
+  if (!file.type.startsWith("image/")) return "รองรับเฉพาะไฟล์รูปภาพ";
+  if (file.size > maxImageSize) return "รูปภาพต้องไม่เกิน 5 MB";
+  return "";
+};
 
 const AdminSettings = () => {
-  const [form, setForm] = useState(() => getSiteSettings())
-  const [errors, setErrors] = useState({})
-  const [imageError, setImageError] = useState('')
-  const { toast, showToast, clearToast } = useToast()
+  const [form, setForm] = useState(() => getSiteSettings());
+  const [errors, setErrors] = useState({});
+  const [imageError, setImageError] = useState("");
+  const { toast, showToast, clearToast } = useToast();
 
   const update = (event) => {
-    const { name, value } = event.target
-    setForm((current) => ({ ...current, [name]: value }))
-  }
+    const { name, value } = event.target;
+    setForm((current) => ({ ...current, [name]: value }));
+  };
 
   const validate = () => {
-    const nextErrors = {}
-    if (!form.homeHeroImage?.trim()) nextErrors.homeHeroImage = 'กรุณาใส่ URL หรืออัปโหลดรูปหน้าปก'
-    if (!form.homeHeroAlt?.trim()) nextErrors.homeHeroAlt = 'กรุณากรอกคำอธิบายรูป'
-    setErrors(nextErrors)
-    return Object.keys(nextErrors).length === 0
-  }
+    const nextErrors = {};
+    if (!form.homeHeroImage?.trim())
+      nextErrors.homeHeroImage = "กรุณาใส่ URL หรืออัปโหลดรูปหน้าปก";
+    if (!form.homeHeroAlt?.trim())
+      nextErrors.homeHeroAlt = "กรุณากรอกคำอธิบายรูป";
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
 
   const handleHeroFile = async (event) => {
-    const file = event.target.files?.[0]
-    if (!file) return
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    const error = validateImage(file)
+    const error = validateImage(file);
     if (error) {
-      setImageError(error)
-      return
+      setImageError(error);
+      return;
     }
 
-    const dataUrl = await readFileAsDataUrl(file)
-    setImageError('')
+    const dataUrl = await readFileAsDataUrl(file);
+    setImageError("");
     setForm((current) => ({
       ...current,
       homeHeroImage: dataUrl,
-      homeHeroAlt: current.homeHeroAlt || 'รูปหน้าปกบ้านจักรพันธุ์',
-    }))
-    event.target.value = ''
-  }
+      homeHeroAlt: current.homeHeroAlt || "รูปหน้าปกบ้านจักรพันธ์",
+    }));
+    event.target.value = "";
+  };
 
   const handleSubmit = (event) => {
-    event.preventDefault()
+    event.preventDefault();
     if (!validate()) {
-      showToast('กรุณาตรวจสอบข้อมูลรูปหน้าปก', 'error')
-      return
+      showToast("กรุณาตรวจสอบข้อมูลรูปหน้าปก", "error");
+      return;
     }
 
-    const savedSettings = saveSiteSettings(form)
-    setForm(savedSettings)
-    setErrors({})
-    showToast('บันทึกรูปหน้าปกหน้าแรกเรียบร้อยแล้ว')
-  }
+    const savedSettings = saveSiteSettings(form);
+    setForm(savedSettings);
+    setErrors({});
+    showToast("บันทึกรูปหน้าปกหน้าแรกเรียบร้อยแล้ว");
+  };
 
   const handleReset = () => {
-    const defaultSettings = resetSiteSettings()
-    setForm(defaultSettings)
-    setErrors({})
-    setImageError('')
-    showToast('คืนค่ารูปหน้าปกเริ่มต้นแล้ว')
-  }
+    const defaultSettings = resetSiteSettings();
+    setForm(defaultSettings);
+    setErrors({});
+    setImageError("");
+    showToast("คืนค่ารูปหน้าปกเริ่มต้นแล้ว");
+  };
 
   return (
     <div className="space-y-6">
@@ -101,7 +103,10 @@ const AdminSettings = () => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-        <form className="rounded-lg bg-white p-5 shadow-sm" onSubmit={handleSubmit}>
+        <form
+          className="rounded-lg bg-white p-5 shadow-sm"
+          onSubmit={handleSubmit}
+        >
           <div className="mb-5 flex items-center gap-2 text-xl font-extrabold text-[#0E4F52]">
             <ImagePlus size={22} /> รูปหน้าปกหน้าแรก
           </div>
@@ -154,7 +159,7 @@ const AdminSettings = () => {
           <div className="aspect-[16/9] overflow-hidden rounded-lg border border-[#B28A55]/50 bg-[#EAF4F2]">
             <ImageWithFallback
               src={form.homeHeroImage}
-              alt={form.homeHeroAlt || 'ตัวอย่างรูปหน้าปก'}
+              alt={form.homeHeroAlt || "ตัวอย่างรูปหน้าปก"}
               className="h-full w-full object-cover"
             />
           </div>
@@ -164,7 +169,7 @@ const AdminSettings = () => {
         </section>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default AdminSettings
+export default AdminSettings;

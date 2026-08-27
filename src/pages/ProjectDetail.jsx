@@ -26,6 +26,12 @@ const statItems = [
   { key: 'parking', label: 'ที่จอดรถ', suffix: 'คัน', icon: Car },
 ]
 
+const getProjectVideo = (project) => {
+  if (project.video?.source) return project.video
+  if (project.videoUrl) return { source: 'youtube', url: project.videoUrl }
+  return null
+}
+
 const ProjectDetail = () => {
   const { id } = useParams()
   const [project, setProject] = useState(null)
@@ -81,6 +87,7 @@ const ProjectDetail = () => {
     ? project.galleryImages
     : project.gallery || []
   const floorPlanImages = project.floorPlanImages || []
+  const projectVideo = getProjectVideo(project)
 
   return (
     <>
@@ -180,15 +187,29 @@ const ProjectDetail = () => {
                 ))}
               </ul>
             </div>
-            <div className="aspect-video overflow-hidden rounded-lg border border-[#B28A55]/50 bg-black shadow-[0_22px_54px_rgba(6,56,59,0.18)]">
-              <iframe
-                className="h-full w-full"
-                src={getEmbedUrl(project.videoUrl)}
-                title={`วิดีโอ ${project.title}`}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
+            {projectVideo && (
+              <div className="aspect-video overflow-hidden rounded-lg border border-[#B28A55]/50 bg-black shadow-[0_22px_54px_rgba(6,56,59,0.18)]">
+                {projectVideo.source === 'cloudinary' ? (
+                  <video
+                    className="h-full w-full"
+                    src={projectVideo.secureUrl || projectVideo.url}
+                    controls
+                    playsInline
+                    preload="metadata"
+                  >
+                    เบราว์เซอร์ของคุณไม่รองรับการเล่นวิดีโอ
+                  </video>
+                ) : (
+                  <iframe
+                    className="h-full w-full"
+                    src={getEmbedUrl(projectVideo.url)}
+                    title={`วิดีโอ ${project.title}`}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                )}
+              </div>
+            )}
           </div>
         </section>
 
