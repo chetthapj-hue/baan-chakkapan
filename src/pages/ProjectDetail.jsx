@@ -10,7 +10,6 @@ import {
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import ContactButtons from '../components/ContactButtons'
-import FloorPlan from '../components/FloorPlan'
 import ImageWithFallback from '../components/ImageWithFallback'
 import ProjectCard from '../components/ProjectCard'
 import ProjectGallery from '../components/ProjectGallery'
@@ -77,6 +76,11 @@ const ProjectDetail = () => {
   }
 
   if (!project || project.publishStatus !== 'published') return <NotFound />
+
+  const galleryImages = project.galleryImages?.length
+    ? project.galleryImages
+    : project.gallery || []
+  const floorPlanImages = project.floorPlanImages || []
 
   return (
     <>
@@ -146,13 +150,20 @@ const ProjectDetail = () => {
         </section>
 
         <section className="container-page space-y-8 pb-16">
-          <FloorPlan plan={project.floorPlan} />
+          {floorPlanImages.length > 0 && (
+            <div>
+              <h2 className="mb-4 text-2xl font-black text-[#0E4F52]">
+                แปลนบ้าน
+              </h2>
+              <ProjectGallery images={floorPlanImages} title="แปลนบ้าน" />
+            </div>
+          )}
 
           <div>
             <h2 className="mb-4 text-2xl font-black text-[#0E4F52]">
               รูปภาพบ้าน
             </h2>
-            <ProjectGallery images={project.gallery} />
+            <ProjectGallery images={galleryImages} title="รูปภาพบ้าน" />
           </div>
 
           <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
