@@ -18,9 +18,10 @@ export const loginAdmin = async ({ username, password }) => {
     })
 
     storage.writeJson(storageKeys.adminSession, {
+      id: result.admin?.id || username,
       username: result.admin?.username || username,
       name: result.admin?.name || 'Admin',
-      role: 'main-admin',
+      role: result.admin?.role || 'admin',
       token: result.token,
       expiresAt: result.expiresAt,
       loggedInAt: new Date().toISOString(),

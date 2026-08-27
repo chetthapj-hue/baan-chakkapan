@@ -1,4 +1,5 @@
 import { storage, storageKeys } from './storageService'
+import { apiRequest } from './apiClient'
 
 export const adminRoles = {
   main: 'main-admin',
@@ -16,8 +17,23 @@ export const getCurrentAdmin = () => {
     ...session,
     id: session.id || session.username,
     name: session.name || session.username,
-    role: session.role || adminRoles.main,
+    role: session.role || adminRoles.admin,
   }
 }
 
 export const isMainAdmin = () => getCurrentAdmin()?.role === adminRoles.main
+
+export const listAdmins = () => apiRequest('/admins', { auth: true })
+
+export const createAdmin = ({ name, username, password }) =>
+  apiRequest('/admins', {
+    method: 'POST',
+    auth: true,
+    body: { name, username, password },
+  })
+
+export const deleteAdmin = (id) =>
+  apiRequest(`/admins/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    auth: true,
+  })
