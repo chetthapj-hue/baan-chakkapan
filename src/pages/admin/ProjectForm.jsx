@@ -1,11 +1,14 @@
 import {
   ArrowDown,
   ArrowUp,
+  Film,
   ImagePlus,
   Save,
   Star,
   Trash2,
   Upload,
+  Video,
+  XCircle,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -24,6 +27,12 @@ import {
   validateImageFiles,
 } from '../../services/imageUploadService'
 import { getProjectById } from '../../services/projectService'
+import {
+  deleteUploadedVideo,
+  getVideoFileSummary,
+  uploadVideoToCloudinary,
+  validateVideoFile,
+} from '../../services/videoUploadService'
 import { createSlug, formatPriceShort } from '../../utils/formatters'
 
 const emptyProject = {
@@ -42,7 +51,19 @@ const emptyProject = {
   parking: 2,
   description: '',
   highlightsText: '',
-  videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+  videoMode: 'none',
+  videoUrl: '',
+  video: {
+    source: null,
+    url: '',
+    secureUrl: '',
+    publicId: '',
+    resourceType: '',
+    format: '',
+    bytes: 0,
+    duration: 0,
+    originalFilename: '',
+  },
   coverImage: '',
   coverImagePublicId: '',
   coverAlt: '',
@@ -61,6 +82,39 @@ const normalizeImages = (images = []) =>
     .filter((image) => image.url)
     .sort((a, b) => a.order - b.order)
     .map((image, index) => ({ ...image, order: index }))
+
+const emptyVideo = emptyProject.video
+
+const normalizeVideo = (project = {}) => {
+  const video = project.video || {}
+  if (video.source === 'cloudinary' && video.publicId) {
+    return {
+      source: 'cloudinary',
+      url: video.url || video.secureUrl,
+      secureUrl: video.secureUrl || video.url,
+      publicId: video.publicId,
+      resourceType: video.resourceType || 'video',
+      format: video.format || '',
+      bytes: Number(video.bytes) || 0,
+      duration: Number(video.duration) || 0,
+      originalFilename: video.originalFilename || '',
+    }
+  }
+
+  const youtubeUrl = video.source === 'youtube' ? video.url : project.videoUrl
+  if (youtubeUrl) {
+    return {
+      ...emptyVideo,
+      source: 'youtube',
+      url: youtubeUrl,
+      secureUrl: youtubeUrl,
+    }
+  }
+
+  return { ...emptyVideo }
+}
+
+const getVideoMode = (video) => video.source || 'none'
 
 const normalizeProjectForForm = (project) => {
   const galleryImages = normalizeImages(
@@ -82,6 +136,7 @@ const normalizeProjectForForm = (project) => {
     project.coverAlt ||
     galleryImages[0]?.alt ||
     ''
+  const video = normalizeVideo(project)
 
   return {
     ...emptyProject,
@@ -93,6 +148,9 @@ const normalizeProjectForForm = (project) => {
     coverImage,
     coverImagePublicId,
     coverAlt,
+    video,
+    videoMode: getVideoMode(video),
+    videoUrl: video.source === 'youtube' ? video.url : '',
   }
 }
 
@@ -122,10 +180,16 @@ const ProjectForm = ({ mode }) => {
   const [loadingProject, setLoadingProject] = useState(mode === 'edit')
   const [isSaving, setIsSaving] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [isVideoUploading, setIsVideoUploading] = useState(false)
   const [isDeletingImage, setIsDeletingImage] = useState(false)
+  const [isDeletingVideo, setIsDeletingVideo] = useState(false)
   const [form, setForm] = useState(emptyProject)
   const [errors, setErrors] = useState({})
   const [imageError, setImageError] = useState('')
+  const [videoError, setVideoError] = useState('')
+  const [videoFile, setVideoFile] = useState(null)
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState('')
+  const [videoUploadProgress, setVideoUploadProgress] = useState(0)
   const [galleryQueue, setGalleryQueue] = useState([])
   const [floorPlanQueue, setFloorPlanQueue] = useState([])
   const [houseTypes, setHouseTypes] = useState([])
@@ -150,6 +214,13 @@ const ProjectForm = ({ mode }) => {
       floorPlanQueue.forEach((item) => URL.revokeObjectURL(item.previewUrl))
     },
     [galleryQueue, floorPlanQueue],
+  )
+
+  useEffect(
+    () => () => {
+      if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl)
+    },
+    [videoPreviewUrl],
   )
 
   const loadHouseTypes = async ({ showLoading = true } = {}) => {
@@ -251,6 +322,122 @@ const ProjectForm = ({ mode }) => {
     update(name, value)
   }
 
+  const updateVideoMode = (mode) => {
+    setVideoError('')
+    setVideoUploadProgress(0)
+    setForm((current) => {
+      if (mode === 'youtube') {
+        return {
+          ...current,
+          videoMode: mode,
+          video: current.video?.source === 'youtube' ? current.video : { ...emptyVideo },
+        }
+      }
+
+      if (mode === 'cloudinary') {
+        return {
+          ...current,
+          videoMode: mode,
+          videoUrl: '',
+        }
+      }
+
+      return {
+        ...current,
+        videoMode: mode,
+        videoUrl: '',
+        video: { ...emptyVideo },
+      }
+    })
+  }
+
+  const handleVideoFile = (event) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+
+    const error = validateVideoFile(file)
+    if (error) {
+      setVideoError(error)
+      return
+    }
+
+    if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl)
+    setVideoFile(file)
+    setVideoPreviewUrl(URL.createObjectURL(file))
+    setVideoUploadProgress(0)
+    setVideoError('')
+    updateVideoMode('cloudinary')
+  }
+
+  const uploadSelectedVideo = async () => {
+    if (!videoFile) return
+
+    const error = validateVideoFile(videoFile)
+    if (error) {
+      setVideoError(error)
+      return
+    }
+
+    setIsVideoUploading(true)
+    setVideoUploadProgress(1)
+    try {
+      const uploadedVideo = await uploadVideoToCloudinary({
+        file: videoFile,
+        onProgress: setVideoUploadProgress,
+      })
+      setForm((current) => ({
+        ...current,
+        videoMode: 'cloudinary',
+        videoUrl: '',
+        video: uploadedVideo,
+      }))
+      setVideoFile(null)
+      if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl)
+      setVideoPreviewUrl('')
+      setVideoError('')
+      showToast('อัปโหลดวิดีโอเรียบร้อยแล้ว')
+    } catch (error) {
+      setVideoError(error.message || 'อัปโหลดวิดีโอไม่สำเร็จ')
+      showToast(error.message || 'อัปโหลดวิดีโอไม่สำเร็จ', 'error')
+    } finally {
+      setIsVideoUploading(false)
+    }
+  }
+
+  const clearVideo = async () => {
+    const currentVideo = form.video
+    const shouldDeleteCloudinaryVideo =
+      currentVideo?.source === 'cloudinary' && currentVideo.publicId
+
+    setIsDeletingVideo(true)
+    try {
+      if (shouldDeleteCloudinaryVideo) {
+        await deleteUploadedVideo({
+          publicId: currentVideo.publicId,
+          projectId: editingProject?.id,
+        })
+      }
+
+      if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl)
+      setVideoFile(null)
+      setVideoPreviewUrl('')
+      setVideoUploadProgress(0)
+      setVideoError('')
+      setForm((current) => ({
+        ...current,
+        videoMode: 'none',
+        videoUrl: '',
+        video: { ...emptyVideo },
+      }))
+      showToast('ลบวิดีโอแล้ว')
+    } catch (error) {
+      showToast(error.message || 'ลบวิดีโอไม่สำเร็จ', 'error')
+    } finally {
+      setIsDeletingVideo(false)
+    }
+  }
+
   const validate = () => {
     const requiredFields = [
       'title',
@@ -284,6 +471,14 @@ const ProjectForm = ({ mode }) => {
       (image) => !image.alt?.trim(),
     )
     if (imagesWithoutAlt) nextErrors.galleryImages = 'รูปทั้งหมดต้องมี Alt text'
+    if (isVideoUploading) nextErrors.video = 'กรุณารอให้อัปโหลดวิดีโอเสร็จก่อน'
+    if (videoFile) nextErrors.video = 'กรุณาอัปโหลดวิดีโอที่เลือกไว้ก่อนบันทึก'
+    if (form.videoMode === 'youtube' && !form.videoUrl.trim()) {
+      nextErrors.video = 'กรุณาใส่ URL วิดีโอ YouTube'
+    }
+    if (form.videoMode === 'cloudinary' && form.video?.source !== 'cloudinary') {
+      nextErrors.video = 'กรุณาอัปโหลดวิดีโอให้เสร็จก่อนบันทึก'
+    }
 
     setErrors(nextErrors)
     return Object.keys(nextErrors).length === 0
@@ -462,6 +657,10 @@ const ProjectForm = ({ mode }) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    if (isVideoUploading || videoFile) {
+      showToast('กรุณาอัปโหลดวิดีโอให้เสร็จก่อนบันทึก', 'error')
+      return
+    }
     if (queuedImages) {
       showToast('กรุณาอัปโหลดรูปที่เลือกไว้ก่อนบันทึก', 'error')
       return
@@ -474,6 +673,17 @@ const ProjectForm = ({ mode }) => {
     const cover = selectedCover || form.galleryImages[0]
     const galleryImages = normalizeImages(form.galleryImages)
     const floorPlanImages = normalizeImages(form.floorPlanImages)
+    const video =
+      form.videoMode === 'cloudinary'
+        ? form.video
+        : form.videoMode === 'youtube'
+          ? {
+              ...emptyVideo,
+              source: 'youtube',
+              url: form.videoUrl.trim(),
+              secureUrl: form.videoUrl.trim(),
+            }
+          : { ...emptyVideo }
     const payload = {
       ...form,
       id: editingProject?.id || form.slug,
@@ -490,6 +700,8 @@ const ProjectForm = ({ mode }) => {
       floorPlanImages,
       gallery: galleryImages,
       floorPlan: null,
+      video,
+      videoUrl: video.source === 'youtube' ? video.url : '',
       highlights: form.highlightsText
         .split('\n')
         .map((item) => item.trim())
@@ -792,12 +1004,134 @@ const ProjectForm = ({ mode }) => {
               onChange={handleChange}
               required
             />
-            <FormInput
-              label="URL วิดีโอ YouTube"
-              name="videoUrl"
-              value={form.videoUrl}
-              onChange={handleChange}
-            />
+            <div className="rounded-lg border border-[#0E4F52]/10 p-4">
+              <div className="mb-4 flex flex-wrap gap-2">
+                {[
+                  ['cloudinary', 'อัปโหลดวิดีโอจากเครื่อง', Film],
+                  ['youtube', 'ใช้ URL วิดีโอ YouTube', Video],
+                  ['none', 'ไม่ใส่วิดีโอ', XCircle],
+                ].map(([modeValue, label, Icon]) => (
+                  <button
+                    key={modeValue}
+                    type="button"
+                    className={`inline-flex min-h-10 items-center gap-2 rounded-md border px-3 py-2 text-sm font-extrabold transition ${
+                      form.videoMode === modeValue
+                        ? 'border-[#0E4F52] bg-[#EAF4F2] text-[#0E4F52]'
+                        : 'border-[#0E4F52]/15 text-[#5e6256] hover:bg-[#EAF4F2]'
+                    }`}
+                    onClick={() => updateVideoMode(modeValue)}
+                    disabled={isVideoUploading}
+                  >
+                    <Icon size={17} /> {label}
+                  </button>
+                ))}
+              </div>
+
+              {(videoError || errors.video) && (
+                <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm font-bold text-red-700">
+                  {videoError || errors.video}
+                </p>
+              )}
+
+              {form.videoMode === 'youtube' && (
+                <FormInput
+                  label="URL วิดีโอ YouTube"
+                  name="videoUrl"
+                  value={form.videoUrl}
+                  error={errors.video}
+                  onChange={handleChange}
+                />
+              )}
+
+              {form.videoMode === 'cloudinary' && (
+                <div className="grid gap-4">
+                  {form.video?.source === 'cloudinary' && (
+                    <div className="rounded-lg bg-[#EAF4F2] p-4">
+                      <p className="font-extrabold text-[#0E4F52]">
+                        {form.video.originalFilename || 'วิดีโอผลงาน'}
+                      </p>
+                      <p className="mt-1 text-sm text-[#5e6256]">
+                        {formatFileSize(form.video.bytes)} · {form.video.format?.toUpperCase()}
+                      </p>
+                      <video
+                        className="mt-3 aspect-video w-full rounded-lg bg-black"
+                        src={form.video.secureUrl || form.video.url}
+                        controls
+                        playsInline
+                        preload="metadata"
+                      >
+                        เบราว์เซอร์ของคุณไม่รองรับการเล่นวิดีโอ
+                      </video>
+                    </div>
+                  )}
+
+                  {videoFile && (
+                    <div className="rounded-lg border border-[#0E4F52]/10 p-4">
+                      <p className="font-extrabold text-[#0E4F52]">
+                        {getVideoFileSummary(videoFile)}
+                      </p>
+                      {videoPreviewUrl && (
+                        <video
+                          className="mt-3 aspect-video w-full rounded-lg bg-black"
+                          src={videoPreviewUrl}
+                          controls
+                          playsInline
+                          preload="metadata"
+                        >
+                          เบราว์เซอร์ของคุณไม่รองรับการเล่นวิดีโอ
+                        </video>
+                      )}
+                      <div className="mt-3 h-3 overflow-hidden rounded-full bg-[#EAF4F2]">
+                        <div
+                          className="h-full rounded-full bg-[#0E4F52] transition-all"
+                          style={{ width: `${videoUploadProgress}%` }}
+                        />
+                      </div>
+                      <p className="mt-1 text-xs font-bold text-[#5e6256]">
+                        {videoUploadProgress}%
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-2">
+                    <label className="btn-ghost cursor-pointer">
+                      <Film size={18} /> {form.video?.source === 'cloudinary' ? 'เปลี่ยนวิดีโอ' : 'เลือกวิดีโอ'}
+                      <input
+                        type="file"
+                        accept="video/mp4,video/webm,video/quicktime,.mov"
+                        className="sr-only"
+                        onChange={handleVideoFile}
+                        disabled={isVideoUploading}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      disabled={!videoFile || isVideoUploading}
+                      onClick={uploadSelectedVideo}
+                    >
+                      <Upload size={18} /> {isVideoUploading ? 'กำลังอัปโหลด' : 'อัปโหลดวิดีโอ'}
+                    </button>
+                    {(form.video?.source === 'cloudinary' || videoFile) && (
+                      <button
+                        type="button"
+                        className="btn-ghost text-red-700"
+                        onClick={clearVideo}
+                        disabled={isVideoUploading || isDeletingVideo}
+                      >
+                        <Trash2 size={18} /> ลบวิดีโอ
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {form.videoMode === 'none' && (
+                <p className="rounded-lg bg-[#EAF4F2] p-4 text-sm font-bold text-[#5e6256]">
+                  ผลงานนี้จะไม่แสดงส่วนวิดีโอในหน้าเว็บไซต์
+                </p>
+              )}
+            </div>
           </div>
         </section>
 
@@ -895,7 +1229,7 @@ const ProjectForm = ({ mode }) => {
           <button
             type="submit"
             className="btn-primary"
-            disabled={isSaving || isUploading || isDeletingImage}
+            disabled={isSaving || isUploading || isDeletingImage || isVideoUploading || isDeletingVideo}
           >
             <Save size={18} /> {isSaving ? 'กำลังบันทึก' : 'บันทึกผลงาน'}
           </button>

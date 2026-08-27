@@ -48,12 +48,63 @@ const withProjectImages = (project = {}) => {
   }
 }
 
+const emptyVideo = {
+  source: null,
+  url: '',
+  secureUrl: '',
+  publicId: '',
+  resourceType: '',
+  format: '',
+  bytes: 0,
+  duration: 0,
+  originalFilename: '',
+}
+
+const withProjectVideo = (project = {}) => {
+  const video = project.video || {}
+  if (video.source === 'cloudinary' && video.publicId) {
+    return {
+      ...project,
+      video: {
+        source: 'cloudinary',
+        url: video.url || video.secureUrl,
+        secureUrl: video.secureUrl || video.url,
+        publicId: video.publicId,
+        resourceType: video.resourceType || 'video',
+        format: video.format || '',
+        bytes: Number(video.bytes) || 0,
+        duration: Number(video.duration) || 0,
+        originalFilename: video.originalFilename || '',
+      },
+      videoUrl: '',
+    }
+  }
+
+  const youtubeUrl = video.source === 'youtube' ? video.url : project.videoUrl
+  if (youtubeUrl) {
+    return {
+      ...project,
+      video: {
+        ...emptyVideo,
+        source: 'youtube',
+        url: youtubeUrl,
+        secureUrl: youtubeUrl,
+      },
+      videoUrl: youtubeUrl,
+    }
+  }
+
+  return { ...project, video: { ...emptyVideo }, videoUrl: '' }
+}
+
 const withProjectDefaults = (project, index = 0) => {
   const seedProject = seedProjectById.get(project.id) || {}
-  const mergedProject = withProjectImages({
-    ...seedProject,
-    ...project,
-  })
+  const mergedProject = withProjectVideo(
+    withProjectImages({
+      ...seedProject,
+      ...project,
+    }),
+  )
 
   return {
     ...mergedProject,
@@ -94,7 +145,7 @@ const saveLocalProject = (project) => {
   const now = new Date().toISOString()
   const id = project.id || project.slug || `project-${Date.now()}`
   const nextProject = {
-    ...withProjectImages(project),
+    ...withProjectVideo(withProjectImages(project)),
     id,
     slug: project.slug || id,
     priceValue: Number(project.priceValue) || 0,

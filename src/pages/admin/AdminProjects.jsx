@@ -1,18 +1,18 @@
-﻿import { Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import ConfirmModal from '../../components/ConfirmModal'
-import ImageWithFallback from '../../components/ImageWithFallback'
-import StatusBadge from '../../components/StatusBadge'
-import Toast from '../../components/Toast'
-import { useProjects } from '../../hooks/useProjects'
-import { useToast } from '../../hooks/useToast'
+﻿import { Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import ConfirmModal from "../../components/ConfirmModal";
+import ImageWithFallback from "../../components/ImageWithFallback";
+import StatusBadge from "../../components/StatusBadge";
+import Toast from "../../components/Toast";
+import { useProjects } from "../../hooks/useProjects";
+import { useToast } from "../../hooks/useToast";
 
 const AdminProjects = () => {
-  const { projects, remove, togglePublish } = useProjects()
-  const [search, setSearch] = useState('')
-  const [deleteTarget, setDeleteTarget] = useState(null)
-  const { toast, showToast, clearToast } = useToast()
+  const { projects, remove, togglePublish } = useProjects();
+  const [search, setSearch] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const { toast, showToast, clearToast } = useToast();
 
   const filteredProjects = useMemo(
     () =>
@@ -20,32 +20,32 @@ const AdminProjects = () => {
         project.title.toLowerCase().includes(search.toLowerCase()),
       ),
     [projects, search],
-  )
+  );
 
   const confirmDelete = async () => {
     try {
-      await remove(deleteTarget.id)
-      showToast(`ลบ ${deleteTarget.title} แล้ว`)
-      setDeleteTarget(null)
+      await remove(deleteTarget.id);
+      showToast(`ลบ ${deleteTarget.title} แล้ว`);
+      setDeleteTarget(null);
     } catch {
-      showToast('ลบผลงานไม่สำเร็จ กรุณาลองใหม่', 'error')
+      showToast("ลบผลงานไม่สำเร็จ กรุณาลองใหม่", "error");
     }
-  }
+  };
 
   const handleToggle = async (id) => {
     try {
-      const updatedProject = await togglePublish(id)
-      if (!updatedProject) return
+      const updatedProject = await togglePublish(id);
+      if (!updatedProject) return;
 
       showToast(
-        updatedProject.publishStatus === 'published'
-          ? 'เปลี่ยนเป็นสถานะเผยแพร่แล้ว'
-          : 'เปลี่ยนเป็นฉบับร่างแล้ว',
-      )
+        updatedProject.publishStatus === "published"
+          ? "เปลี่ยนเป็นสถานะเผยแพร่แล้ว"
+          : "เปลี่ยนเป็นฉบับร่างแล้ว",
+      );
     } catch {
-      showToast('เปลี่ยนสถานะไม่สำเร็จ กรุณาลองใหม่', 'error')
+      showToast("เปลี่ยนสถานะไม่สำเร็จ กรุณาลองใหม่", "error");
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -53,7 +53,7 @@ const AdminProjects = () => {
       <ConfirmModal
         open={Boolean(deleteTarget)}
         title="ยืนยันการลบผลงาน"
-        message={`ต้องการลบ ${deleteTarget?.title || ''} ออกจาก localStorage หรือไม่`}
+        message={`ต้องการลบ ${deleteTarget?.title || ""} ออกจาก localStorage หรือไม่`}
         confirmLabel="ลบผลงาน"
         onConfirm={confirmDelete}
         onClose={() => setDeleteTarget(null)}
@@ -62,7 +62,9 @@ const AdminProjects = () => {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
           <p className="text-sm font-bold uppercase text-[#0E4F52]">Projects</p>
-          <h1 className="text-3xl font-extrabold text-[#0E4F52]">จัดการผลงาน</h1>
+          <h1 className="text-3xl font-extrabold text-[#0E4F52]">
+            จัดการผลงาน
+          </h1>
         </div>
         <Link to="/admin/projects/new" className="btn-primary w-fit">
           <Plus size={18} /> เพิ่มผลงาน
@@ -76,7 +78,7 @@ const AdminProjects = () => {
             size={18}
           />
           <input
-            className="form-field pl-10"
+            className="form-field !pl-10"
             placeholder="ค้นหาผลงาน"
             aria-label="ค้นหาผลงานในแอดมิน"
             value={search}
@@ -132,7 +134,7 @@ const AdminProjects = () => {
                 className="btn-ghost px-3"
                 onClick={() => handleToggle(project.id)}
               >
-                {project.publishStatus === 'published' ? 'ซ่อน' : 'เผยแพร่'}
+                {project.publishStatus === "published" ? "ซ่อน" : "เผยแพร่"}
               </button>
               <button
                 type="button"
@@ -147,11 +149,7 @@ const AdminProjects = () => {
         ))}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default AdminProjects
-
-
-
-
+export default AdminProjects;
