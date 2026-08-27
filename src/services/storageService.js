@@ -1,4 +1,4 @@
-﻿const readJson = (key, fallback) => {
+const readJson = (key, fallback) => {
   try {
     const value = window.localStorage.getItem(key)
     return value ? JSON.parse(value) : fallback
@@ -15,7 +15,7 @@ export const storageKeys = {
   projects: 'baanjakkraphan.projects',
   contacts: 'baanjakkraphan.contacts',
   adminSession: 'baanjakkraphan.adminSession',
-  admins: 'baanjakkraphan.admins',
+  siteSettings: 'baanjakkraphan.siteSettings',
 }
 
 export const storage = {

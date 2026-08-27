@@ -1,4 +1,4 @@
-﻿import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import PublicLayout from '../layouts/PublicLayout'
 import AdminLayout from '../layouts/AdminLayout'
 import ProtectedRoute from './ProtectedRoute'
@@ -12,7 +12,7 @@ import AdminLogin from '../pages/admin/AdminLogin'
 import AdminDashboard from '../pages/admin/AdminDashboard'
 import AdminProjects from '../pages/admin/AdminProjects'
 import ProjectForm from '../pages/admin/ProjectForm'
-import AdminUsers from '../pages/admin/AdminUsers'
+import AdminSettings from '../pages/admin/AdminSettings'
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -32,7 +32,7 @@ const AppRoutes = () => (
           <Route path="projects" element={<AdminProjects />} />
           <Route path="projects/new" element={<ProjectForm mode="new" />} />
           <Route path="projects/:id/edit" element={<ProjectForm mode="edit" />} />
-          <Route path="admins" element={<AdminUsers />} />
+          <Route path="settings" element={<AdminSettings />} />
         </Route>
       </Route>
 
@@ -42,5 +42,3 @@ const AppRoutes = () => (
 )
 
 export default AppRoutes
-
-
