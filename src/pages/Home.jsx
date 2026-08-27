@@ -20,6 +20,7 @@ import ImageWithFallback from "../components/ImageWithFallback";
 import ProjectCard from "../components/ProjectCard";
 import { houseImages } from "../data/mockData";
 import { getPublishedProjects } from "../services/projectService";
+import { getSiteSettings } from "../services/siteSettingsService";
 
 const services = [
   {
@@ -71,6 +72,7 @@ const buildBrief = [
 
 const Home = () => {
   const [publishedProjects, setPublishedProjects] = useState([]);
+  const [siteSettings, setSiteSettings] = useState(() => getSiteSettings());
 
   useEffect(() => {
     let active = true;
@@ -88,6 +90,24 @@ const Home = () => {
     };
   }, []);
 
+
+  useEffect(() => {
+    const updateHeroSettings = () => setSiteSettings(getSiteSettings());
+
+    window.addEventListener("storage", updateHeroSettings);
+    window.addEventListener(
+      "baanjakkraphan:site-settings-updated",
+      updateHeroSettings,
+    );
+
+    return () => {
+      window.removeEventListener("storage", updateHeroSettings);
+      window.removeEventListener(
+        "baanjakkraphan:site-settings-updated",
+        updateHeroSettings,
+      );
+    };
+  }, []);
   const modernProjects = publishedProjects.filter(
     (project) =>
       project.type === "บ้านโมเดิร์น" || project.title.includes("โมเดิร์น"),
@@ -95,7 +115,11 @@ const Home = () => {
   const featuredProjects = (
     modernProjects.length >= 3 ? modernProjects : publishedProjects
   ).slice(0, 3);
-  const heroImage = houseImages[9] || houseImages[0];
+  const defaultHeroImage = houseImages[9] || houseImages[0];
+  const heroImage = {
+    url: siteSettings.homeHeroImage || defaultHeroImage.url,
+    alt: siteSettings.homeHeroAlt || defaultHeroImage.alt,
+  };
 
   return (
     <>
