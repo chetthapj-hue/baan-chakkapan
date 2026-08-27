@@ -473,7 +473,7 @@ export const companyInfo = {
   lineId: 'jochak2028',
   facebook: 'บ้านจักรพันธ์',
   email: 'jochakkapan@gmail.com',
-  hours: 'จันทร์-เสาร์ 09:00-18:00 น.',
+  hours: 'จันทร์-เสาร์ 08:00-17:00 น.',
   address: 'เชียงใหม่, Chiang Mai, Thailand, 50160',
 }
 

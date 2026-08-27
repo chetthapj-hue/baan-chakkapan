@@ -1,75 +1,109 @@
-import { Home, Search, SlidersHorizontal } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import ProjectCard from "../components/ProjectCard";
-import { projectStatuses, projectTypes } from "../data/mockData";
-import { getPublishedProjects } from "../services/projectService";
+import { Home, Search, SlidersHorizontal } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import ProjectCard from '../components/ProjectCard'
+import { projectStatuses } from '../data/mockData'
+import { getHouseTypes } from '../services/houseTypeService'
+import { getPublishedProjects } from '../services/projectService'
 
 const priceRanges = [
-  { label: "ทุกช่วงราคา", value: "all" },
-  { label: "ไม่เกิน 1 ล้านบาท", value: "under-1" },
-  { label: "3-5 ล้านบาท", value: "3-5" },
-  { label: "มากกว่า 5 ล้านบาท", value: "over-5" },
-];
+  { label: 'ทุกช่วงราคา', value: 'all' },
+  { label: 'ไม่เกิน 1 ล้านบาท', value: 'under-1' },
+  { label: '3-5 ล้านบาท', value: '3-5' },
+  { label: 'มากกว่า 5 ล้านบาท', value: 'over-5' },
+]
 
 const Projects = () => {
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState([])
+  const [houseTypes, setHouseTypes] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [houseTypesLoading, setHouseTypesLoading] = useState(true)
+  const [houseTypesError, setHouseTypesError] = useState('')
   const [filters, setFilters] = useState({
-    search: "",
-    type: "all",
-    status: "all",
-    price: "all",
-  });
+    search: '',
+    type: 'all',
+    status: 'all',
+    price: 'all',
+  })
 
   useEffect(() => {
-    let active = true;
+    let active = true
 
     getPublishedProjects()
       .then((nextProjects) => {
-        if (active) setProjects(nextProjects);
+        if (active) setProjects(nextProjects)
       })
       .catch(() => {
-        if (active) setProjects([]);
+        if (active) setProjects([])
       })
       .finally(() => {
-        if (active) setLoading(false);
-      });
+        if (active) setLoading(false)
+      })
 
     return () => {
-      active = false;
-    };
-  }, []);
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+
+    getHouseTypes()
+      .then((nextHouseTypes) => {
+        if (!active) return
+        setHouseTypes(nextHouseTypes)
+        setHouseTypesError('')
+      })
+      .catch((error) => {
+        if (active) setHouseTypesError(error.message || 'โหลดประเภทบ้านไม่สำเร็จ')
+      })
+      .finally(() => {
+        if (active) setHouseTypesLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const retryHouseTypes = async () => {
+    setHouseTypesLoading(true)
+    try {
+      setHouseTypes(await getHouseTypes())
+      setHouseTypesError('')
+    } catch (error) {
+      setHouseTypesError(error.message || 'โหลดประเภทบ้านไม่สำเร็จ')
+    } finally {
+      setHouseTypesLoading(false)
+    }
+  }
 
   const modernCount = projects.filter(
-    (project) =>
-      project.type === "บ้านโมเดิร์น" || project.title.includes("โมเดิร์น"),
-  ).length;
+    (project) => project.type === 'บ้านโมเดิร์น' || project.title.includes('โมเดิร์น'),
+  ).length
 
   const filteredProjects = useMemo(
     () =>
       projects.filter((project) => {
         const searchMatch = project.title
           .toLowerCase()
-          .includes(filters.search.toLowerCase());
-        const typeMatch =
-          filters.type === "all" || project.type === filters.type;
-        const statusMatch =
-          filters.status === "all" || project.status === filters.status;
-        const price = Number(project.priceValue);
+          .includes(filters.search.toLowerCase())
+        const typeMatch = filters.type === 'all' || project.type === filters.type
+        const statusMatch = filters.status === 'all' || project.status === filters.status
+        const price = Number(project.priceValue)
         const priceMatch =
-          filters.price === "all" ||
-          (filters.price === "under-1" && price < 1000000) ||
-          (filters.price === "3-5" && price >= 3000000 && price <= 5000000) ||
-          (filters.price === "over-5" && price > 5000000);
+          filters.price === 'all' ||
+          (filters.price === 'under-1' && price < 1000000) ||
+          (filters.price === '3-5' && price >= 3000000 && price <= 5000000) ||
+          (filters.price === 'over-5' && price > 5000000)
 
-        return searchMatch && typeMatch && statusMatch && priceMatch;
+        return searchMatch && typeMatch && statusMatch && priceMatch
       }),
     [projects, filters],
-  );
+  )
 
   const updateFilter = (name, value) => {
-    setFilters((current) => ({ ...current, [name]: value }));
-  };
+    setFilters((current) => ({ ...current, [name]: value }))
+  }
 
   return (
     <>
@@ -86,9 +120,9 @@ const Projects = () => {
           </p>
           <div className="mt-8 grid gap-3 md:grid-cols-3">
             {[
-              [`${projects.length}`, "แบบบ้านทั้งหมด"],
-              [`${modernCount}`, "แบบโมเดิร์น"],
-              ["100%", "มีแปลนประกอบ"],
+              [`${projects.length}`, 'แบบบ้านทั้งหมด'],
+              [`${modernCount}`, 'แบบโมเดิร์น'],
+              ['100%', 'มีแปลนประกอบ'],
             ].map(([value, label]) => (
               <div key={label} className="surface-dark rounded-lg p-5">
                 <p className="text-3xl font-black text-white">{value}</p>
@@ -105,6 +139,18 @@ const Projects = () => {
             <div className="mb-4 flex items-center gap-2 font-extrabold text-[#0E4F52]">
               <SlidersHorizontal size={20} /> ค้นหาและกรองผลงาน
             </div>
+            {houseTypesError && (
+              <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm font-bold text-red-700">
+                {houseTypesError}
+                <button
+                  type="button"
+                  className="ml-3 underline"
+                  onClick={retryHouseTypes}
+                >
+                  ลองใหม่
+                </button>
+              </div>
+            )}
             <div className="grid gap-3 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
               <label className="relative">
                 <Search
@@ -114,9 +160,7 @@ const Projects = () => {
                 <input
                   className="form-field !pl-10"
                   value={filters.search}
-                  onChange={(event) =>
-                    updateFilter("search", event.target.value)
-                  }
+                  onChange={(event) => updateFilter('search', event.target.value)}
                   placeholder="ค้นหาจากชื่อผลงาน"
                   aria-label="ค้นหาจากชื่อผลงาน"
                 />
@@ -124,20 +168,23 @@ const Projects = () => {
               <select
                 className="form-field"
                 value={filters.type}
-                onChange={(event) => updateFilter("type", event.target.value)}
+                onChange={(event) => updateFilter('type', event.target.value)}
                 aria-label="กรองประเภทบ้าน"
+                disabled={houseTypesLoading}
               >
-                <option value="all">ทุกประเภทบ้าน</option>
-                {projectTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
+                <option value="all">
+                  {houseTypesLoading ? 'กำลังโหลดประเภทบ้าน' : 'ทุกประเภทบ้าน'}
+                </option>
+                {houseTypes.map((type) => (
+                  <option key={type.id} value={type.name}>
+                    {type.name}
                   </option>
                 ))}
               </select>
               <select
                 className="form-field"
                 value={filters.status}
-                onChange={(event) => updateFilter("status", event.target.value)}
+                onChange={(event) => updateFilter('status', event.target.value)}
                 aria-label="กรองสถานะงาน"
               >
                 <option value="all">ทุกสถานะ</option>
@@ -150,7 +197,7 @@ const Projects = () => {
               <select
                 className="form-field"
                 value={filters.price}
-                onChange={(event) => updateFilter("price", event.target.value)}
+                onChange={(event) => updateFilter('price', event.target.value)}
                 aria-label="กรองช่วงราคา"
               >
                 {priceRanges.map((range) => (
@@ -186,7 +233,7 @@ const Projects = () => {
         </div>
       </section>
     </>
-  );
-};
+  )
+}
 
-export default Projects;
+export default Projects

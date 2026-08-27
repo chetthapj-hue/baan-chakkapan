@@ -1,4 +1,11 @@
-import { FolderKanban, LayoutDashboard, LogOut, Settings, Users } from 'lucide-react'
+import {
+  FolderKanban,
+  Home,
+  LayoutDashboard,
+  LogOut,
+  Settings,
+  Users,
+} from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   getCurrentAdmin,
@@ -35,6 +42,9 @@ const AdminSidebar = () => {
         </NavLink>
         <NavLink to="/admin/projects" className={adminNavClass}>
           <FolderKanban size={18} /> จัดการผลงาน
+        </NavLink>
+        <NavLink to="/admin/house-types" className={adminNavClass}>
+          <Home size={18} /> ประเภทบ้าน
         </NavLink>
         {isMainAdmin() && (
           <NavLink to="/admin/admins" className={adminNavClass}>
