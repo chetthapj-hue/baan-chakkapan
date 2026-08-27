@@ -65,7 +65,7 @@ const heroStats = [
 ];
 
 const buildBrief = [
-  { icon: HomeIcon, label: "บ้านโมเดิร์น", value: "ทรงเรียบ คม สว่าง" },
+  { icon: HomeIcon, label: "บ้าน", value: "ทรงเรียบ คม สว่าง" },
   { icon: Ruler, label: "วางแปลน", value: "ครบพื้นที่ใช้งานจริง" },
   { icon: Layers, label: "งานก่อสร้าง", value: "ดูแลเป็นขั้นตอน" },
 ];
@@ -89,7 +89,6 @@ const Home = () => {
       active = false;
     };
   }, []);
-
 
   useEffect(() => {
     const updateHeroSettings = () => setSiteSettings(getSiteSettings());

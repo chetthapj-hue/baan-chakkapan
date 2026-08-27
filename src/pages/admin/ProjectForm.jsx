@@ -1,12 +1,13 @@
 ﻿import { ImagePlus, Save, Trash2, Upload } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import FormInput from '../../components/FormInput'
 import ImageWithFallback from '../../components/ImageWithFallback'
 import Toast from '../../components/Toast'
-import { FALLBACK_IMAGE, projectStatuses, projectTypes } from '../../data/mockData'
+import { FALLBACK_IMAGE, projectStatuses } from '../../data/mockData'
 import { useProjects } from '../../hooks/useProjects'
 import { useToast } from '../../hooks/useToast'
+import { getHouseTypes } from '../../services/houseTypeService'
 import { getProjectById } from '../../services/projectService'
 import { createSlug, formatPriceShort } from '../../utils/formatters'
 
@@ -15,7 +16,7 @@ const maxImageSize = 2 * 1024 * 1024
 const emptyProject = {
   title: '',
   slug: '',
-  type: projectTypes[0],
+  type: '',
   status: projectStatuses[0],
   publishStatus: 'published',
   price: '',
@@ -55,6 +56,14 @@ const validateImage = (file) => {
   return ''
 }
 
+const withCurrentTypeOption = (houseTypes, currentType) => {
+  if (!currentType || houseTypes.some((houseType) => houseType.name === currentType)) {
+    return houseTypes
+  }
+
+  return [{ id: `current-${currentType}`, name: currentType }, ...houseTypes]
+}
+
 const ProjectForm = ({ mode }) => {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -66,6 +75,58 @@ const ProjectForm = ({ mode }) => {
   const [form, setForm] = useState(emptyProject)
   const [errors, setErrors] = useState({})
   const [imageError, setImageError] = useState('')
+  const [houseTypes, setHouseTypes] = useState([])
+  const [houseTypesLoading, setHouseTypesLoading] = useState(true)
+  const [houseTypesError, setHouseTypesError] = useState('')
+
+  const typeOptions = useMemo(
+    () => withCurrentTypeOption(houseTypes, form.type),
+    [houseTypes, form.type],
+  )
+
+  const loadHouseTypes = async ({ showLoading = true } = {}) => {
+    if (showLoading) setHouseTypesLoading(true)
+    try {
+      const nextHouseTypes = await getHouseTypes()
+      setHouseTypes(nextHouseTypes)
+      setHouseTypesError('')
+      setForm((current) => ({
+        ...current,
+        type: current.type || nextHouseTypes[0]?.name || '',
+      }))
+    } catch (error) {
+      setHouseTypesError(error.message || 'โหลดประเภทบ้านไม่สำเร็จ')
+    } finally {
+      if (showLoading) setHouseTypesLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    let active = true
+
+    const loadInitialHouseTypes = async () => {
+      try {
+        const nextHouseTypes = await getHouseTypes()
+        if (!active) return
+        setHouseTypes(nextHouseTypes)
+        setHouseTypesError('')
+        setForm((current) => ({
+          ...current,
+          type: current.type || nextHouseTypes[0]?.name || '',
+        }))
+      } catch (error) {
+        if (active) setHouseTypesError(error.message || 'โหลดประเภทบ้านไม่สำเร็จ')
+      } finally {
+        if (active) setHouseTypesLoading(false)
+      }
+    }
+
+    loadInitialHouseTypes()
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -146,6 +207,7 @@ const ProjectForm = ({ mode }) => {
     if (!form.coverImage.trim()) nextErrors.coverImage = 'กรุณาใส่ URL หรืออัปโหลดรูปปก'
     if (!form.coverAlt.trim()) nextErrors.coverAlt = 'กรุณากรอก alt text รูปปก'
     if (!form.highlightsText.trim()) nextErrors.highlightsText = 'กรุณากรอกจุดเด่นอย่างน้อย 1 รายการ'
+    if (houseTypesError && !form.type) nextErrors.type = 'โหลดประเภทบ้านไม่สำเร็จ'
     setErrors(nextErrors)
     return Object.keys(nextErrors).length === 0
   }
@@ -301,15 +363,32 @@ const ProjectForm = ({ mode }) => {
               required
             />
             <FormInput label="ประเภทบ้าน" error={errors.type} required>
+              {houseTypesError && (
+                <div className="mb-2 rounded-md bg-red-50 px-3 py-2 text-sm font-bold text-red-700">
+                  {houseTypesError}
+                  <button
+                    type="button"
+                    className="ml-3 underline"
+                    onClick={() => loadHouseTypes()}
+                  >
+                    ลองใหม่
+                  </button>
+                </div>
+              )}
               <select
                 className="form-field"
                 name="type"
                 value={form.type}
                 onChange={handleChange}
+                disabled={houseTypesLoading || (!typeOptions.length && Boolean(houseTypesError))}
               >
-                {projectTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
+                {houseTypesLoading && <option value="">กำลังโหลดประเภทบ้าน</option>}
+                {!houseTypesLoading && !typeOptions.length && (
+                  <option value="">ยังไม่มีประเภทบ้าน</option>
+                )}
+                {typeOptions.map((type) => (
+                  <option key={type.id} value={type.name}>
+                    {type.name}
                   </option>
                 ))}
               </select>

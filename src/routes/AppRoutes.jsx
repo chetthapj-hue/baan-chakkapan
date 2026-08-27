@@ -14,6 +14,7 @@ import AdminProjects from '../pages/admin/AdminProjects'
 import ProjectForm from '../pages/admin/ProjectForm'
 import AdminSettings from '../pages/admin/AdminSettings'
 import AdminUsers from '../pages/admin/AdminUsers'
+import AdminHouseTypes from '../pages/admin/AdminHouseTypes'
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -33,6 +34,7 @@ const AppRoutes = () => (
           <Route path="projects" element={<AdminProjects />} />
           <Route path="projects/new" element={<ProjectForm mode="new" />} />
           <Route path="projects/:id/edit" element={<ProjectForm mode="edit" />} />
+          <Route path="house-types" element={<AdminHouseTypes />} />
           <Route path="admins" element={<AdminUsers />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>
