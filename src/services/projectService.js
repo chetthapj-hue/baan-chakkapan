@@ -4,11 +4,59 @@ import { storage, storageKeys } from './storageService'
 
 const seedProjectById = new Map(seedProjects.map((project) => [project.id, project]))
 
+const normalizeImages = (images = []) =>
+  images
+    .map((image, index) => ({
+      url: image.url,
+      publicId: image.publicId || '',
+      alt: image.alt || `รูปภาพ ${index + 1}`,
+      order: Number.isFinite(Number(image.order)) ? Number(image.order) : index,
+    }))
+    .filter((image) => image.url)
+    .sort((a, b) => a.order - b.order)
+    .map((image, index) => ({ ...image, order: index }))
+
+const withProjectImages = (project = {}) => {
+  const galleryImages = normalizeImages(
+    project.galleryImages?.length ? project.galleryImages : project.gallery,
+  )
+  const floorPlanImages = normalizeImages(project.floorPlanImages)
+  const coverImagePublicId =
+    project.coverImagePublicId ||
+    galleryImages.find((image) => image.url === project.coverImage)?.publicId ||
+    galleryImages[0]?.publicId ||
+    ''
+  const coverImage =
+    galleryImages.find((image) => image.publicId === coverImagePublicId)?.url ||
+    project.coverImage ||
+    galleryImages[0]?.url ||
+    ''
+  const coverAlt =
+    galleryImages.find((image) => image.url === coverImage)?.alt ||
+    project.coverAlt ||
+    galleryImages[0]?.alt ||
+    ''
+
+  return {
+    ...project,
+    galleryImages,
+    floorPlanImages,
+    coverImagePublicId,
+    coverImage,
+    coverAlt,
+    gallery: galleryImages.length ? galleryImages : project.gallery || [],
+  }
+}
+
 const withProjectDefaults = (project, index = 0) => {
   const seedProject = seedProjectById.get(project.id) || {}
-  return {
+  const mergedProject = withProjectImages({
     ...seedProject,
     ...project,
+  })
+
+  return {
+    ...mergedProject,
     floorPlan:
       project.floorPlan || seedProject.floorPlan || createDefaultFloorPlan(project, index),
   }
@@ -46,7 +94,7 @@ const saveLocalProject = (project) => {
   const now = new Date().toISOString()
   const id = project.id || project.slug || `project-${Date.now()}`
   const nextProject = {
-    ...project,
+    ...withProjectImages(project),
     id,
     slug: project.slug || id,
     priceValue: Number(project.priceValue) || 0,
@@ -55,9 +103,11 @@ const saveLocalProject = (project) => {
     bedrooms: Number(project.bedrooms) || 0,
     bathrooms: Number(project.bathrooms) || 0,
     parking: Number(project.parking) || 0,
-    gallery: project.gallery || [],
+    gallery: withProjectImages(project).gallery,
+    galleryImages: withProjectImages(project).galleryImages,
+    floorPlanImages: withProjectImages(project).floorPlanImages,
     highlights: project.highlights || [],
-    floorPlan: project.floorPlan || createDefaultFloorPlan(project, projects.length),
+    floorPlan: project.floorPlan || null,
     createdAt: project.createdAt || now,
     updatedAt: now,
   }

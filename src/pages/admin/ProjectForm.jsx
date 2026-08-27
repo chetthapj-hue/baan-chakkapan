@@ -1,4 +1,12 @@
-﻿import { ImagePlus, Save, Trash2, Upload } from 'lucide-react'
+import {
+  ArrowDown,
+  ArrowUp,
+  ImagePlus,
+  Save,
+  Star,
+  Trash2,
+  Upload,
+} from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import FormInput from '../../components/FormInput'
@@ -8,10 +16,15 @@ import { FALLBACK_IMAGE, projectStatuses } from '../../data/mockData'
 import { useProjects } from '../../hooks/useProjects'
 import { useToast } from '../../hooks/useToast'
 import { getHouseTypes } from '../../services/houseTypeService'
+import {
+  deleteUploadedImage,
+  formatFileSize,
+  imageRules,
+  uploadProjectImages,
+  validateImageFiles,
+} from '../../services/imageUploadService'
 import { getProjectById } from '../../services/projectService'
 import { createSlug, formatPriceShort } from '../../utils/formatters'
-
-const maxImageSize = 2 * 1024 * 1024
 
 const emptyProject = {
   title: '',
@@ -31,29 +44,56 @@ const emptyProject = {
   highlightsText: '',
   videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
   coverImage: '',
+  coverImagePublicId: '',
   coverAlt: '',
-  gallery: [],
+  galleryImages: [],
+  floorPlanImages: [],
 }
 
-const normalizeProjectForForm = (project) => ({
-  ...emptyProject,
-  ...project,
-  priceValue: project.priceValue || '',
-  highlightsText: (project.highlights || []).join('\n'),
-})
+const normalizeImages = (images = []) =>
+  images
+    .map((image, index) => ({
+      url: image.url,
+      publicId: image.publicId || '',
+      alt: image.alt || `รูปภาพ ${index + 1}`,
+      order: Number.isFinite(Number(image.order)) ? Number(image.order) : index,
+    }))
+    .filter((image) => image.url)
+    .sort((a, b) => a.order - b.order)
+    .map((image, index) => ({ ...image, order: index }))
 
-const readFileAsDataUrl = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
+const normalizeProjectForForm = (project) => {
+  const galleryImages = normalizeImages(
+    project.galleryImages?.length ? project.galleryImages : project.gallery,
+  )
+  const floorPlanImages = normalizeImages(project.floorPlanImages)
+  const coverImagePublicId =
+    project.coverImagePublicId ||
+    galleryImages.find((image) => image.url === project.coverImage)?.publicId ||
+    galleryImages[0]?.publicId ||
+    ''
+  const coverImage =
+    galleryImages.find((image) => image.publicId === coverImagePublicId)?.url ||
+    project.coverImage ||
+    galleryImages[0]?.url ||
+    ''
+  const coverAlt =
+    galleryImages.find((image) => image.url === coverImage)?.alt ||
+    project.coverAlt ||
+    galleryImages[0]?.alt ||
+    ''
 
-const validateImage = (file) => {
-  if (!file.type.startsWith('image/')) return 'รองรับเฉพาะไฟล์รูปภาพ'
-  if (file.size > maxImageSize) return 'รูปภาพต้องไม่เกิน 2 MB'
-  return ''
+  return {
+    ...emptyProject,
+    ...project,
+    priceValue: project.priceValue || '',
+    highlightsText: (project.highlights || []).join('\n'),
+    galleryImages,
+    floorPlanImages,
+    coverImage,
+    coverImagePublicId,
+    coverAlt,
+  }
 }
 
 const withCurrentTypeOption = (houseTypes, currentType) => {
@@ -64,6 +104,15 @@ const withCurrentTypeOption = (houseTypes, currentType) => {
   return [{ id: `current-${currentType}`, name: currentType }, ...houseTypes]
 }
 
+const makeQueuedFiles = (files) =>
+  files.map((file, index) => ({
+    id: `${file.name}-${file.size}-${file.lastModified}-${index}`,
+    file,
+    previewUrl: URL.createObjectURL(file),
+  }))
+
+const getImageKey = (image, index) => image.publicId || `${image.url}-${index}`
+
 const ProjectForm = ({ mode }) => {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -72,9 +121,13 @@ const ProjectForm = ({ mode }) => {
   const [editingProject, setEditingProject] = useState(null)
   const [loadingProject, setLoadingProject] = useState(mode === 'edit')
   const [isSaving, setIsSaving] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [isDeletingImage, setIsDeletingImage] = useState(false)
   const [form, setForm] = useState(emptyProject)
   const [errors, setErrors] = useState({})
   const [imageError, setImageError] = useState('')
+  const [galleryQueue, setGalleryQueue] = useState([])
+  const [floorPlanQueue, setFloorPlanQueue] = useState([])
   const [houseTypes, setHouseTypes] = useState([])
   const [houseTypesLoading, setHouseTypesLoading] = useState(true)
   const [houseTypesError, setHouseTypesError] = useState('')
@@ -82,6 +135,21 @@ const ProjectForm = ({ mode }) => {
   const typeOptions = useMemo(
     () => withCurrentTypeOption(houseTypes, form.type),
     [houseTypes, form.type],
+  )
+  const totalSavedImages = form.galleryImages.length + form.floorPlanImages.length
+  const queuedImages = galleryQueue.length + floorPlanQueue.length
+  const totalImages = totalSavedImages + queuedImages
+  const selectedCover =
+    form.galleryImages.find((image) => image.publicId === form.coverImagePublicId) ||
+    form.galleryImages.find((image) => image.url === form.coverImage) ||
+    form.galleryImages[0]
+
+  useEffect(
+    () => () => {
+      galleryQueue.forEach((item) => URL.revokeObjectURL(item.previewUrl))
+      floorPlanQueue.forEach((item) => URL.revokeObjectURL(item.previewUrl))
+    },
+    [galleryQueue, floorPlanQueue],
   )
 
   const loadHouseTypes = async ({ showLoading = true } = {}) => {
@@ -204,80 +272,208 @@ const ProjectForm = ({ mode }) => {
     requiredFields.forEach((field) => {
       if (!String(form[field] || '').trim()) nextErrors[field] = 'กรุณากรอกข้อมูล'
     })
-    if (!form.coverImage.trim()) nextErrors.coverImage = 'กรุณาใส่ URL หรืออัปโหลดรูปปก'
-    if (!form.coverAlt.trim()) nextErrors.coverAlt = 'กรุณากรอก alt text รูปปก'
+    if (!form.galleryImages.length) nextErrors.galleryImages = 'กรุณาอัปโหลดรูปผลงานอย่างน้อย 1 รูป'
+    if (!selectedCover?.url) nextErrors.coverImage = 'กรุณาเลือกรูปปกจาก Gallery'
     if (!form.highlightsText.trim()) nextErrors.highlightsText = 'กรุณากรอกจุดเด่นอย่างน้อย 1 รายการ'
     if (houseTypesError && !form.type) nextErrors.type = 'โหลดประเภทบ้านไม่สำเร็จ'
+    if (totalImages > imageRules.maxProjectImages) {
+      nextErrors.galleryImages = 'อัปโหลดรูปภาพได้รวมไม่เกิน 10 รูปต่อผลงาน'
+    }
+
+    const imagesWithoutAlt = [...form.galleryImages, ...form.floorPlanImages].some(
+      (image) => !image.alt?.trim(),
+    )
+    if (imagesWithoutAlt) nextErrors.galleryImages = 'รูปทั้งหมดต้องมี Alt text'
+
     setErrors(nextErrors)
     return Object.keys(nextErrors).length === 0
   }
 
-  const handleCoverFile = async (event) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-    const error = validateImage(file)
+  const addQueuedFiles = (event, type) => {
+    const files = Array.from(event.target.files || [])
+    event.target.value = ''
+    if (!files.length) return
+
+    const error = validateImageFiles(files, totalImages)
     if (error) {
       setImageError(error)
       return
     }
-    const dataUrl = await readFileAsDataUrl(file)
+
+    const queued = makeQueuedFiles(files)
     setImageError('')
-    setForm((current) => ({
-      ...current,
-      coverImage: dataUrl,
-      coverAlt: current.coverAlt || `รูปปก ${current.title || 'ผลงานบ้าน'}`,
-    }))
+    if (type === 'gallery') {
+      setGalleryQueue((current) => [...current, ...queued])
+      return
+    }
+    setFloorPlanQueue((current) => [...current, ...queued])
   }
 
-  const handleGalleryFiles = async (event) => {
-    const files = Array.from(event.target.files || [])
-    if (!files.length) return
-    if (form.gallery.length + files.length > 10) {
-      setImageError('จำกัดรูป Gallery ไม่เกิน 10 รูป')
-      return
+  const removeQueuedFile = (id, type) => {
+    const removeFromQueue = (queue) => {
+      const item = queue.find((queuedFile) => queuedFile.id === id)
+      if (item) URL.revokeObjectURL(item.previewUrl)
+      return queue.filter((queuedFile) => queuedFile.id !== id)
     }
 
-    const invalid = files.map(validateImage).find(Boolean)
-    if (invalid) {
-      setImageError(invalid)
+    if (type === 'gallery') {
+      setGalleryQueue(removeFromQueue)
       return
     }
+    setFloorPlanQueue(removeFromQueue)
+  }
 
-    const images = await Promise.all(
-      files.map(async (file, index) => ({
-        url: await readFileAsDataUrl(file),
-        alt: `${form.title || 'ผลงานบ้าน'} รูปที่ ${form.gallery.length + index + 1}`,
-      })),
+  const uploadQueue = async (type) => {
+    const queue = type === 'gallery' ? galleryQueue : floorPlanQueue
+    if (!queue.length) return
+
+    const error = validateImageFiles(
+      queue.map((item) => item.file),
+      totalSavedImages,
     )
-    setImageError('')
-    setForm((current) => ({
-      ...current,
-      gallery: [...current.gallery, ...images],
-    }))
+    if (error) {
+      setImageError(error)
+      return
+    }
+
+    setIsUploading(true)
+    try {
+      const result = await uploadProjectImages({
+        files: queue.map((item) => item.file),
+        type,
+        projectId: editingProject?.id,
+      })
+      const uploadedImages = normalizeImages(
+        result.images.map((image, index) => ({
+          ...image,
+          alt:
+            type === 'gallery'
+              ? `${form.title || 'ผลงานบ้าน'} รูปที่ ${form.galleryImages.length + index + 1}`
+              : `แปลนชั้น ${form.floorPlanImages.length + index + 1}`,
+        })),
+      )
+
+      setForm((current) => {
+        if (type === 'gallery') {
+          const galleryImages = normalizeImages([...current.galleryImages, ...uploadedImages])
+          const cover = current.coverImagePublicId
+            ? galleryImages.find((image) => image.publicId === current.coverImagePublicId)
+            : galleryImages[0]
+          return {
+            ...current,
+            galleryImages,
+            coverImage: cover?.url || '',
+            coverImagePublicId: cover?.publicId || '',
+            coverAlt: cover?.alt || '',
+          }
+        }
+
+        return {
+          ...current,
+          floorPlanImages: normalizeImages([...current.floorPlanImages, ...uploadedImages]),
+        }
+      })
+
+      queue.forEach((item) => URL.revokeObjectURL(item.previewUrl))
+      if (type === 'gallery') setGalleryQueue([])
+      else setFloorPlanQueue([])
+      setImageError('')
+      showToast(type === 'gallery' ? 'อัปโหลดรูปผลงานแล้ว' : 'อัปโหลดรูปแปลนแล้ว')
+    } catch (error) {
+      showToast(error.message || 'อัปโหลดรูปภาพไม่สำเร็จ', 'error')
+    } finally {
+      setIsUploading(false)
+    }
   }
 
-  const removeGalleryImage = (index) => {
-    setForm((current) => ({
-      ...current,
-      gallery: current.gallery.filter((_, itemIndex) => itemIndex !== index),
-    }))
+  const updateImageAlt = (type, index, alt) => {
+    const key = type === 'gallery' ? 'galleryImages' : 'floorPlanImages'
+    setForm((current) => {
+      const images = current[key].map((image, itemIndex) =>
+        itemIndex === index ? { ...image, alt } : image,
+      )
+      const next = { ...current, [key]: images }
+      if (type === 'gallery' && images[index]?.publicId === current.coverImagePublicId) {
+        next.coverAlt = alt
+      }
+      return next
+    })
+  }
+
+  const moveImage = (type, index, direction) => {
+    const key = type === 'gallery' ? 'galleryImages' : 'floorPlanImages'
+    const nextIndex = index + direction
+    setForm((current) => {
+      if (nextIndex < 0 || nextIndex >= current[key].length) return current
+
+      const images = [...current[key]]
+      const [item] = images.splice(index, 1)
+      images.splice(nextIndex, 0, item)
+      return { ...current, [key]: normalizeImages(images) }
+    })
   }
 
   const setAsCover = (image) => {
     setForm((current) => ({
       ...current,
       coverImage: image.url,
+      coverImagePublicId: image.publicId || '',
       coverAlt: image.alt,
     }))
   }
 
+  const removeSavedImage = async (type, index) => {
+    const key = type === 'gallery' ? 'galleryImages' : 'floorPlanImages'
+    const image = form[key][index]
+    if (!image) return
+
+    setIsDeletingImage(true)
+    try {
+      if (image.publicId) {
+        await deleteUploadedImage({
+          publicId: image.publicId,
+          projectId: editingProject?.id,
+        })
+      }
+
+      setForm((current) => {
+        const images = current[key].filter((_, itemIndex) => itemIndex !== index)
+        if (type !== 'gallery') return { ...current, [key]: normalizeImages(images) }
+
+        const galleryImages = normalizeImages(images)
+        const removedCover =
+          current.coverImagePublicId === image.publicId || current.coverImage === image.url
+        const nextCover = removedCover ? galleryImages[0] : selectedCover
+        return {
+          ...current,
+          galleryImages,
+          coverImage: nextCover?.url || '',
+          coverImagePublicId: nextCover?.publicId || '',
+          coverAlt: nextCover?.alt || '',
+        }
+      })
+      showToast('ลบรูปภาพแล้ว')
+    } catch (error) {
+      showToast(error.message || 'ลบรูปภาพไม่สำเร็จ', 'error')
+    } finally {
+      setIsDeletingImage(false)
+    }
+  }
+
   const handleSubmit = async (event) => {
     event.preventDefault()
+    if (queuedImages) {
+      showToast('กรุณาอัปโหลดรูปที่เลือกไว้ก่อนบันทึก', 'error')
+      return
+    }
     if (!validate()) {
       showToast('กรุณาตรวจสอบข้อมูลที่จำเป็น', 'error')
       return
     }
 
+    const cover = selectedCover || form.galleryImages[0]
+    const galleryImages = normalizeImages(form.galleryImages)
+    const floorPlanImages = normalizeImages(form.floorPlanImages)
     const payload = {
       ...form,
       id: editingProject?.id || form.slug,
@@ -287,14 +483,17 @@ const ProjectForm = ({ mode }) => {
       bedrooms: Number(form.bedrooms),
       bathrooms: Number(form.bathrooms),
       parking: Number(form.parking),
-      coverImage: form.coverImage || FALLBACK_IMAGE,
+      coverImage: cover?.url || FALLBACK_IMAGE,
+      coverImagePublicId: cover?.publicId || '',
+      coverAlt: cover?.alt || form.coverAlt,
+      galleryImages,
+      floorPlanImages,
+      gallery: galleryImages,
+      floorPlan: null,
       highlights: form.highlightsText
         .split('\n')
         .map((item) => item.trim())
         .filter(Boolean),
-      gallery: form.gallery.length
-        ? form.gallery
-        : [{ url: form.coverImage, alt: form.coverAlt }],
     }
 
     setIsSaving(true)
@@ -302,12 +501,108 @@ const ProjectForm = ({ mode }) => {
       await save(payload)
       showToast(mode === 'edit' ? 'บันทึกการแก้ไขแล้ว' : 'เพิ่มผลงานใหม่แล้ว')
       window.setTimeout(() => navigate('/admin/projects'), 700)
-    } catch {
-      showToast('บันทึกไม่สำเร็จ กรุณาลองใหม่', 'error')
+    } catch (error) {
+      showToast(error.message || 'บันทึกไม่สำเร็จ กรุณาลองใหม่', 'error')
     } finally {
       setIsSaving(false)
     }
   }
+
+  const renderQueue = (queue, type) =>
+    queue.length ? (
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        {queue.map((item) => (
+          <div key={item.id} className="rounded-lg border border-[#0E4F52]/10 p-2">
+            <div className="aspect-[4/3] overflow-hidden rounded-md bg-[#EAF4F2]">
+              <img
+                src={item.previewUrl}
+                alt={item.file.name}
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <p className="mt-2 line-clamp-1 text-xs font-bold text-[#0E4F52]">
+              {item.file.name}
+            </p>
+            <p className="mt-1 text-xs text-[#5e6256]">
+              {formatFileSize(item.file.size)}
+            </p>
+            <button
+              type="button"
+              className="btn-ghost mt-2 min-h-9 px-2 text-red-700"
+              onClick={() => removeQueuedFile(item.id, type)}
+              disabled={isUploading}
+            >
+              <Trash2 size={15} /> ลบออก
+            </button>
+          </div>
+        ))}
+      </div>
+    ) : null
+
+  const renderImageList = (images, type) =>
+    images.length ? (
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        {images.map((image, index) => (
+          <div key={getImageKey(image, index)} className="rounded-lg border border-[#0E4F52]/10 p-2">
+            <div className="aspect-[4/3] overflow-hidden rounded-md bg-[#EAF4F2]">
+              <ImageWithFallback
+                src={image.url}
+                alt={image.alt}
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <FormInput
+              label={type === 'gallery' ? 'Alt text' : 'ชื่อ/Alt แปลน'}
+              value={image.alt}
+              onChange={(event) => updateImageAlt(type, index, event.target.value)}
+            />
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="btn-ghost min-h-9 px-2"
+                onClick={() => moveImage(type, index, -1)}
+                disabled={index === 0}
+                aria-label="เลื่อนรูปขึ้น"
+              >
+                <ArrowUp size={15} />
+              </button>
+              <button
+                type="button"
+                className="btn-ghost min-h-9 px-2"
+                onClick={() => moveImage(type, index, 1)}
+                disabled={index === images.length - 1}
+                aria-label="เลื่อนรูปลง"
+              >
+                <ArrowDown size={15} />
+              </button>
+              {type === 'gallery' && (
+                <button
+                  type="button"
+                  className="btn-ghost min-h-9 px-2"
+                  onClick={() => setAsCover(image)}
+                >
+                  <Star size={15} />
+                  {selectedCover?.url === image.url ? 'รูปปก' : 'ตั้งปก'}
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn-ghost min-h-9 px-2 text-red-700"
+                aria-label="ลบรูปภาพ"
+                onClick={() => removeSavedImage(type, index)}
+                disabled={isDeletingImage}
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div className="mt-4 rounded-lg bg-[#EAF4F2] p-5 text-sm font-bold text-[#5e6256]">
+        {type === 'gallery' ? 'ยังไม่มีรูปผลงาน' : 'ยังไม่มีรูปแปลน'}
+      </div>
+    )
 
   if (loadingProject) {
     return (
@@ -509,97 +804,86 @@ const ProjectForm = ({ mode }) => {
         <section className="rounded-lg bg-white p-5 shadow-sm">
           <div className="mb-5 flex flex-col justify-between gap-3 md:flex-row md:items-center">
             <div>
-              <h2 className="text-xl font-extrabold text-[#0E4F52]">รูปภาพ</h2>
+              <h2 className="text-xl font-extrabold text-[#0E4F52]">รูปภาพและแปลนบ้าน</h2>
               <p className="mt-1 text-sm text-[#5e6256]">
-                Mock จะเก็บรูปเป็น Data URL ใน localStorage เท่านั้น Production ควรใช้ Cloudinary หรือระบบเก็บไฟล์จริง
+                รองรับ JPG, PNG, WebP ไม่เกิน 5 MB ต่อไฟล์ และรวมรูปผลงานกับรูปแปลนไม่เกิน 10 รูป
+              </p>
+              <p className="mt-1 text-sm font-bold text-[#0E4F52]">
+                ใช้แล้ว {totalImages}/{imageRules.maxProjectImages} รูป
               </p>
             </div>
           </div>
-          {imageError && (
+          {(imageError || errors.galleryImages || errors.coverImage) && (
             <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm font-bold text-red-700">
-              {imageError}
+              {imageError || errors.galleryImages || errors.coverImage}
             </p>
           )}
-          <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
-            <div className="space-y-4">
-              <div className="aspect-[4/3] overflow-hidden rounded-lg bg-[#EAF4F2]">
-                <ImageWithFallback
-                  src={form.coverImage}
-                  alt={form.coverAlt || 'ตัวอย่างรูปปก'}
-                  className="h-full w-full object-cover"
-                />
+
+          <div className="grid gap-6">
+            <div className="rounded-lg border border-[#0E4F52]/10 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-extrabold text-[#0E4F52]">รูปผลงาน</h3>
+                  <p className="text-sm text-[#5e6256]">
+                    เลือกรูปปกจากรูปชุดนี้เท่านั้น
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <label className="btn-ghost cursor-pointer">
+                    <ImagePlus size={18} /> เลือกรูปผลงาน
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      multiple
+                      className="sr-only"
+                      onChange={(event) => addQueuedFiles(event, 'gallery')}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    disabled={isUploading || !galleryQueue.length}
+                    onClick={() => uploadQueue('gallery')}
+                  >
+                    <Upload size={18} /> อัปโหลดรูปผลงาน
+                  </button>
+                </div>
               </div>
-              <FormInput
-                label="URL รูปปก"
-                name="coverImage"
-                value={form.coverImage}
-                error={errors.coverImage}
-                onChange={handleChange}
-                required
-              />
-              <FormInput
-                label="Alt text รูปปก"
-                name="coverAlt"
-                value={form.coverAlt}
-                error={errors.coverAlt}
-                onChange={handleChange}
-                required
-              />
-              <label className="btn-ghost cursor-pointer justify-start">
-                <Upload size={18} /> อัปโหลดรูปปก
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={handleCoverFile}
-                />
-              </label>
+              {renderQueue(galleryQueue, 'gallery')}
+              {renderImageList(form.galleryImages, 'gallery')}
             </div>
 
-            <div>
-              <label className="btn-ghost mb-4 cursor-pointer">
-                <ImagePlus size={18} /> เพิ่มรูป Gallery
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="sr-only"
-                  onChange={handleGalleryFiles}
-                />
-              </label>
-              <div className="grid gap-3 md:grid-cols-3">
-                {form.gallery.map((image, index) => (
-                  <div key={`${image.url}-${index}`} className="rounded-lg border border-[#0E4F52]/10 p-2">
-                    <div className="aspect-[4/3] overflow-hidden rounded-md bg-[#EAF4F2]">
-                      <ImageWithFallback
-                        src={image.url}
-                        alt={image.alt}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                    <p className="mt-2 line-clamp-2 text-xs text-[#5e6256]">
-                      {image.alt}
-                    </p>
-                    <div className="mt-2 flex gap-2">
-                      <button
-                        type="button"
-                        className="btn-ghost min-h-9 px-2 text-xs"
-                        onClick={() => setAsCover(image)}
-                      >
-                        ตั้งเป็นรูปปก
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-ghost min-h-9 px-2 text-red-700"
-                        aria-label="ลบรูป Gallery"
-                        onClick={() => removeGalleryImage(index)}
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+            <div className="rounded-lg border border-[#0E4F52]/10 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-extrabold text-[#0E4F52]">รูปแปลนบ้าน</h3>
+                  <p className="text-sm text-[#5e6256]">
+                    ถ้าไม่มีรูปแปลน ระบบจะไม่แสดงแปลน Mock แทน
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <label className="btn-ghost cursor-pointer">
+                    <ImagePlus size={18} /> เลือกรูปแปลน
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      multiple
+                      className="sr-only"
+                      onChange={(event) => addQueuedFiles(event, 'floorPlan')}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    disabled={isUploading || !floorPlanQueue.length}
+                    onClick={() => uploadQueue('floorPlan')}
+                  >
+                    <Upload size={18} /> อัปโหลดรูปแปลน
+                  </button>
+                </div>
               </div>
+              {renderQueue(floorPlanQueue, 'floorPlan')}
+              {renderImageList(form.floorPlanImages, 'floorPlan')}
             </div>
           </div>
         </section>
@@ -608,8 +892,12 @@ const ProjectForm = ({ mode }) => {
           <Link to="/admin/projects" className="btn-ghost">
             ยกเลิก
           </Link>
-          <button type="submit" className="btn-primary" disabled={isSaving}>
-            <Save size={18} /> บันทึกผลงาน
+          <button
+            type="submit"
+            className="btn-primary"
+            disabled={isSaving || isUploading || isDeletingImage}
+          >
+            <Save size={18} /> {isSaving ? 'กำลังบันทึก' : 'บันทึกผลงาน'}
           </button>
         </div>
       </form>
@@ -618,7 +906,3 @@ const ProjectForm = ({ mode }) => {
 }
 
 export default ProjectForm
-
-
-
-

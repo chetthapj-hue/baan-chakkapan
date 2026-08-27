@@ -36,7 +36,7 @@ const Navbar = () => {
             to="/admin/login"
             className="btn-ghost border-white/28 bg-white text-sm"
           >
-            แอดมินสาธิต
+            Admin
           </Link>
           <Link to="/contact" className="btn-secondary text-sm">
             ปรึกษาสร้างบ้าน
