@@ -17,7 +17,7 @@ const ProjectCard = ({ project }) => {
           />
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#062F31]/82 to-transparent" />
           <div className="absolute left-4 top-4">
-            <StatusBadge value={project.status} />
+            <StatusBadge value={project.status} color={project.statusColor} />
           </div>
           <div className="absolute bottom-4 left-4 rounded-md border border-[#B28A55]/70 bg-[#0E4F52] px-3 py-2 text-sm font-extrabold text-white shadow-lg">
             {project.price}

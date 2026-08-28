@@ -2,6 +2,7 @@ import {
   FolderKanban,
   Home,
   LayoutDashboard,
+  ListChecks,
   LogOut,
   Mail,
   Settings,
@@ -65,6 +66,9 @@ const AdminSidebar = () => {
         </NavLink>
         <NavLink to="/admin/house-types" className={adminNavClass}>
           <Home size={18} /> ประเภทบ้าน
+        </NavLink>
+        <NavLink to="/admin/project-statuses" className={adminNavClass}>
+          <ListChecks size={18} /> สถานะงาน
         </NavLink>
         <NavLink to="/admin/contacts" className={adminNavClass}>
           <Mail size={18} /> ข้อความติดต่อ
