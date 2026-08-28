@@ -20,7 +20,12 @@ import ImageWithFallback from "../components/ImageWithFallback";
 import ProjectCard from "../components/ProjectCard";
 import { houseImages } from "../data/mockData";
 import { getPublishedProjects } from "../services/projectService";
-import { getSiteSettings } from "../services/siteSettingsService";
+import {
+  defaultSiteSettings,
+  emptyHomepageVideo,
+  getSiteSettings,
+} from "../services/siteSettingsService";
+import { getEmbedUrl } from "../utils/formatters";
 
 const services = [
   {
@@ -72,7 +77,8 @@ const heroStats = [
 
 const Home = () => {
   const [publishedProjects, setPublishedProjects] = useState([]);
-  const [siteSettings, setSiteSettings] = useState(() => getSiteSettings());
+  const [siteSettings, setSiteSettings] = useState(defaultSiteSettings);
+  const [settingsLoading, setSettingsLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -91,7 +97,23 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    const updateHeroSettings = () => setSiteSettings(getSiteSettings());
+    let active = true;
+
+    const updateHeroSettings = () => {
+      setSettingsLoading(true);
+      getSiteSettings()
+        .then((settings) => {
+          if (active) setSiteSettings(settings);
+        })
+        .catch(() => {
+          if (active) setSiteSettings(defaultSiteSettings);
+        })
+        .finally(() => {
+          if (active) setSettingsLoading(false);
+        });
+    };
+
+    updateHeroSettings();
 
     window.addEventListener("storage", updateHeroSettings);
     window.addEventListener(
@@ -100,6 +122,7 @@ const Home = () => {
     );
 
     return () => {
+      active = false;
       window.removeEventListener("storage", updateHeroSettings);
       window.removeEventListener(
         "baanjakkraphan:site-settings-updated",
@@ -119,6 +142,9 @@ const Home = () => {
     url: siteSettings.homeHeroImage || defaultHeroImage.url,
     alt: siteSettings.homeHeroAlt || defaultHeroImage.alt,
   };
+  const homepageVideo = siteSettings.homepageVideo || emptyHomepageVideo;
+  const hasHomepageVideo =
+    homepageVideo.source === "cloudinary" || homepageVideo.source === "youtube";
 
   return (
     <>
@@ -288,31 +314,59 @@ const Home = () => {
         </div>
       </section>
 
-      <section className="section-pad bg-[#F6F8F4] text-[#202520]">
-        <div className="container-page grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-          <div>
-            <p className="flex items-center gap-2 text-sm font-extrabold uppercase text-[#0E4F52]">
-              <PlayCircle size={18} /> Company Video
-            </p>
-            <h2 className="mt-2 text-3xl font-black text-[#0E4F52] md:text-4xl">
-              วิดีโอแนะนำบริษัท
-            </h2>
-            <p className="mt-4 leading-8 text-[#5e6256]">
-              ใช้พื้นที่นี้สำหรับวิดีโอแนะนำทีมงาน รีวิวบ้านลูกค้า
-              หรือภาพบรรยากาศระหว่างก่อสร้าง
-            </p>
+      {settingsLoading && (
+        <section className="section-pad bg-[#F6F8F4] text-[#202520]">
+          <div className="container-page grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <div className="space-y-4">
+              <div className="h-4 w-36 rounded bg-[#0E4F52]/10" />
+              <div className="h-9 w-72 rounded bg-[#0E4F52]/10" />
+              <div className="h-20 max-w-xl rounded bg-[#0E4F52]/10" />
+            </div>
+            <div className="aspect-video animate-pulse rounded-lg bg-[#0E4F52]/10" />
           </div>
-          <div className="aspect-video overflow-hidden rounded-lg border border-[#B28A55]/50 bg-black shadow-[0_22px_54px_rgba(6,56,59,0.18)]">
-            <iframe
-              className="h-full w-full"
-              src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-              title="วิดีโอแนะนำบริษัทบ้านจักรพันธ์"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+        </section>
+      )}
+
+      {!settingsLoading && hasHomepageVideo && (
+        <section className="section-pad bg-[#F6F8F4] text-[#202520]">
+          <div className="container-page grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <div>
+              <p className="flex items-center gap-2 text-sm font-extrabold uppercase text-[#0E4F52]">
+                <PlayCircle size={18} /> Company Video
+              </p>
+              <h2 className="mt-2 text-3xl font-black text-[#0E4F52] md:text-4xl">
+                {homepageVideo.title || "วิดีโอแนะนำบริษัท"}
+              </h2>
+              {homepageVideo.description && (
+                <p className="mt-4 leading-8 text-[#5e6256]">
+                  {homepageVideo.description}
+                </p>
+              )}
+            </div>
+            <div className="aspect-video overflow-hidden rounded-lg border border-[#B28A55]/50 bg-black shadow-[0_22px_54px_rgba(6,56,59,0.18)]">
+              {homepageVideo.source === "cloudinary" ? (
+                <video
+                  className="h-full w-full"
+                  src={homepageVideo.secureUrl || homepageVideo.url}
+                  controls
+                  playsInline
+                  preload="metadata"
+                >
+                  เบราว์เซอร์ของคุณไม่รองรับการเล่นวิดีโอ
+                </video>
+              ) : (
+                <iframe
+                  className="h-full w-full"
+                  src={getEmbedUrl(homepageVideo.url)}
+                  title={homepageVideo.title || "วิดีโอแนะนำบริษัทบ้านจักรพันธ์"}
+                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              )}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section className="section-pad bg-[#106772] text-white">
         <div className="container-page grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
