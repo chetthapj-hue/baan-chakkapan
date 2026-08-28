@@ -16,6 +16,7 @@ import AdminSettings from '../pages/admin/AdminSettings'
 import AdminUsers from '../pages/admin/AdminUsers'
 import AdminContacts from '../pages/admin/AdminContacts'
 import AdminHouseTypes from '../pages/admin/AdminHouseTypes'
+import AdminProjectStatuses from '../pages/admin/AdminProjectStatuses'
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -37,6 +38,7 @@ const AppRoutes = () => (
           <Route path="projects/:id/edit" element={<ProjectForm mode="edit" />} />
           <Route path="contacts" element={<AdminContacts />} />
           <Route path="house-types" element={<AdminHouseTypes />} />
+          <Route path="project-statuses" element={<AdminProjectStatuses />} />
           <Route path="admins" element={<AdminUsers />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>

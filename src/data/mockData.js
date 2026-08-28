@@ -62,8 +62,6 @@ export const projectTypes = [
   'ต่อเติมบ้าน',
 ]
 
-export const projectStatuses = ['สร้างเสร็จแล้ว', 'กำลังก่อสร้าง', 'แบบบ้าน']
-
 export const floorPlanLayouts = [
   {
     note: 'แปลนเปิดโล่ง โถงนั่งเล่นเชื่อมพื้นที่รับประทานอาหารและครัว เหมาะกับบ้านโมเดิร์นครอบครัวใหญ่',
@@ -476,7 +474,6 @@ export const companyInfo = {
   hours: 'จันทร์-เสาร์ 08:00-17:00 น.',
   address: 'เชียงใหม่, Chiang Mai, Thailand, 50160',
 }
-
 
 
 

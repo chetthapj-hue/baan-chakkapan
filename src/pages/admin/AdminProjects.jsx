@@ -110,7 +110,7 @@ const AdminProjects = () => {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <StatusBadge value={project.status} />
+                <StatusBadge value={project.status} color={project.statusColor} />
                 <StatusBadge value={project.publishStatus} />
               </div>
             </div>

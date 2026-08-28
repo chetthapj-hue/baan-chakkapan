@@ -17,7 +17,7 @@ const Logo = ({ compact = false, inverse = false, to = "/" }) => {
               inverse ? "text-white" : "text-[#0E4F52]"
             }`}
           >
-            บ้านจักรพันธ์
+            BANCHAKKAPAN
           </span>
 
           <span

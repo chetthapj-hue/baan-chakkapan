@@ -52,7 +52,10 @@ const ProjectDetail = () => {
               .filter((item) => item.id !== nextProject?.id)
               .filter(
                 (item) =>
-                  item.type === nextProject?.type || item.status === nextProject?.status,
+                  item.type === nextProject?.type ||
+                  item.statusId === nextProject?.statusId ||
+                  item.statusSlug === nextProject?.statusSlug ||
+                  item.status === nextProject?.status,
               )
               .slice(0, 3),
           )
@@ -109,7 +112,7 @@ const ProjectDetail = () => {
         <section className="bg-[#0E4F52] pb-14 text-white">
           <div className="container-page grid gap-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
             <div className="space-y-6 py-4">
-              <StatusBadge value={project.status} />
+              <StatusBadge value={project.status} color={project.statusColor} />
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <span className="h-px w-12 bg-[#B28A55]" />

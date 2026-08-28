@@ -10,12 +10,12 @@ import {
   Video,
   XCircle,
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import FormInput from '../../components/FormInput'
 import ImageWithFallback from '../../components/ImageWithFallback'
 import Toast from '../../components/Toast'
-import { FALLBACK_IMAGE, projectStatuses } from '../../data/mockData'
+import { FALLBACK_IMAGE } from '../../data/mockData'
 import { useProjects } from '../../hooks/useProjects'
 import { useToast } from '../../hooks/useToast'
 import { getHouseTypes } from '../../services/houseTypeService'
@@ -27,6 +27,7 @@ import {
   validateImageFiles,
 } from '../../services/imageUploadService'
 import { getProjectById } from '../../services/projectService'
+import { getAdminProjectStatuses } from '../../services/projectStatusService'
 import {
   deleteUploadedVideo,
   getVideoFileSummary,
@@ -39,7 +40,10 @@ const emptyProject = {
   title: '',
   slug: '',
   type: '',
-  status: projectStatuses[0],
+  status: '',
+  statusId: '',
+  statusSlug: '',
+  statusColor: '',
   publishStatus: 'published',
   price: '',
   priceValue: '',
@@ -162,6 +166,30 @@ const withCurrentTypeOption = (houseTypes, currentType) => {
   return [{ id: `current-${currentType}`, name: currentType }, ...houseTypes]
 }
 
+const withCurrentStatusOption = (statuses, currentProject) => {
+  const currentStatusId = currentProject.statusId || currentProject.statusSlug || currentProject.status
+  if (!currentStatusId) return statuses
+
+  const hasCurrentStatus = statuses.some(
+    (status) =>
+      status.id === currentProject.statusId ||
+      status.slug === currentProject.statusSlug ||
+      status.name === currentProject.status,
+  )
+  if (hasCurrentStatus) return statuses
+
+  return [
+    {
+      id: currentProject.statusId || `current-${currentProject.status}`,
+      name: currentProject.status,
+      slug: currentProject.statusSlug || currentProject.status,
+      color: currentProject.statusColor || '#0E4F52',
+      isActive: false,
+    },
+    ...statuses,
+  ]
+}
+
 const makeQueuedFiles = (files) =>
   files.map((file, index) => ({
     id: `${file.name}-${file.size}-${file.lastModified}-${index}`,
@@ -195,11 +223,19 @@ const ProjectForm = ({ mode }) => {
   const [houseTypes, setHouseTypes] = useState([])
   const [houseTypesLoading, setHouseTypesLoading] = useState(true)
   const [houseTypesError, setHouseTypesError] = useState('')
+  const [projectStatuses, setProjectStatuses] = useState([])
+  const [projectStatusesLoading, setProjectStatusesLoading] = useState(true)
+  const [projectStatusesError, setProjectStatusesError] = useState('')
 
   const typeOptions = useMemo(
     () => withCurrentTypeOption(houseTypes, form.type),
     [houseTypes, form.type],
   )
+  const statusOptions = useMemo(
+    () => withCurrentStatusOption(projectStatuses, form),
+    [projectStatuses, form],
+  )
+  const selectedStatusValue = form.statusId || form.statusSlug || form.status
   const totalSavedImages = form.galleryImages.length + form.floorPlanImages.length
   const queuedImages = galleryQueue.length + floorPlanQueue.length
   const totalImages = totalSavedImages + queuedImages
@@ -240,6 +276,37 @@ const ProjectForm = ({ mode }) => {
     }
   }
 
+  const applyDefaultStatus = useCallback((nextStatuses) => {
+    setForm((current) => {
+      if (current.status || current.statusId || current.statusSlug) return current
+      const firstStatus = nextStatuses[0]
+      if (!firstStatus) return current
+
+      return {
+        ...current,
+        status: firstStatus.name,
+        statusId: firstStatus.id,
+        statusSlug: firstStatus.slug,
+        statusColor: firstStatus.color || '#0E4F52',
+      }
+    })
+  }, [])
+
+  const loadProjectStatuses = async ({ showLoading = true } = {}) => {
+    if (showLoading) setProjectStatusesLoading(true)
+    try {
+      const nextStatuses = await getAdminProjectStatuses()
+      const activeStatuses = nextStatuses.filter((status) => status.isActive)
+      setProjectStatuses(activeStatuses)
+      setProjectStatusesError('')
+      applyDefaultStatus(activeStatuses)
+    } catch (error) {
+      setProjectStatusesError(error.message || 'โหลดสถานะงานไม่สำเร็จ')
+    } finally {
+      if (showLoading) setProjectStatusesLoading(false)
+    }
+  }
+
   useEffect(() => {
     let active = true
 
@@ -270,10 +337,46 @@ const ProjectForm = ({ mode }) => {
   useEffect(() => {
     let active = true
 
+    const loadInitialProjectStatuses = async () => {
+      try {
+        const nextStatuses = await getAdminProjectStatuses()
+        if (!active) return
+        const activeStatuses = nextStatuses.filter((status) => status.isActive)
+        setProjectStatuses(activeStatuses)
+        setProjectStatusesError('')
+        applyDefaultStatus(activeStatuses)
+      } catch (error) {
+        if (active) setProjectStatusesError(error.message || 'โหลดสถานะงานไม่สำเร็จ')
+      } finally {
+        if (active) setProjectStatusesLoading(false)
+      }
+    }
+
+    loadInitialProjectStatuses()
+
+    return () => {
+      active = false
+    }
+  }, [applyDefaultStatus])
+
+  useEffect(() => {
+    let active = true
+
     const timeoutId = window.setTimeout(() => {
       if (mode !== 'edit' || !id) {
+        const firstStatus = projectStatuses[0]
         setEditingProject(null)
-        setForm(emptyProject)
+        setForm(
+          firstStatus
+            ? {
+                ...emptyProject,
+                status: firstStatus.name,
+                statusId: firstStatus.id,
+                statusSlug: firstStatus.slug,
+                statusColor: firstStatus.color || '#0E4F52',
+              }
+            : emptyProject,
+        )
         setLoadingProject(false)
         return
       }
@@ -298,7 +401,7 @@ const ProjectForm = ({ mode }) => {
       active = false
       window.clearTimeout(timeoutId)
     }
-  }, [id, mode])
+  }, [id, mode, projectStatuses])
 
   const update = (name, value) => {
     setForm((current) => ({ ...current, [name]: value }))
@@ -306,6 +409,19 @@ const ProjectForm = ({ mode }) => {
 
   const handleChange = (event) => {
     const { name, value } = event.target
+    if (name === 'status') {
+      const selectedStatus = statusOptions.find(
+        (status) => status.id === value || status.slug === value || status.name === value,
+      )
+      setForm((current) => ({
+        ...current,
+        status: selectedStatus?.name || value,
+        statusId: selectedStatus?.id || '',
+        statusSlug: selectedStatus?.slug || '',
+        statusColor: selectedStatus?.color || '#0E4F52',
+      }))
+      return
+    }
     if (name === 'title' && !form.slug) {
       setForm((current) => ({
         ...current,
@@ -463,6 +579,7 @@ const ProjectForm = ({ mode }) => {
     if (!selectedCover?.url) nextErrors.coverImage = 'กรุณาเลือกรูปปกจาก Gallery'
     if (!form.highlightsText.trim()) nextErrors.highlightsText = 'กรุณากรอกจุดเด่นอย่างน้อย 1 รายการ'
     if (houseTypesError && !form.type) nextErrors.type = 'โหลดประเภทบ้านไม่สำเร็จ'
+    if (projectStatusesError && !form.status) nextErrors.status = 'โหลดสถานะงานไม่สำเร็จ'
     if (totalImages > imageRules.maxProjectImages) {
       nextErrors.galleryImages = 'อัปโหลดรูปภาพได้รวมไม่เกิน 10 รูปต่อผลงาน'
     }
@@ -673,6 +790,12 @@ const ProjectForm = ({ mode }) => {
     const cover = selectedCover || form.galleryImages[0]
     const galleryImages = normalizeImages(form.galleryImages)
     const floorPlanImages = normalizeImages(form.floorPlanImages)
+    const selectedStatus = statusOptions.find(
+      (status) =>
+        status.id === selectedStatusValue ||
+        status.slug === selectedStatusValue ||
+        status.name === selectedStatusValue,
+    )
     const video =
       form.videoMode === 'cloudinary'
         ? form.video
@@ -687,6 +810,10 @@ const ProjectForm = ({ mode }) => {
     const payload = {
       ...form,
       id: editingProject?.id || form.slug,
+      status: selectedStatus?.name || form.status,
+      statusId: selectedStatus?.id || form.statusId || '',
+      statusSlug: selectedStatus?.slug || form.statusSlug || '',
+      statusColor: selectedStatus?.color || form.statusColor || '#0E4F52',
       priceValue: Number(form.priceValue),
       area: Number(form.area),
       floors: Number(form.floors),
@@ -901,15 +1028,32 @@ const ProjectForm = ({ mode }) => {
               </select>
             </FormInput>
             <FormInput label="สถานะงาน" error={errors.status} required>
+              {projectStatusesError && (
+                <div className="mb-2 rounded-md bg-red-50 px-3 py-2 text-sm font-bold text-red-700">
+                  {projectStatusesError}
+                  <button
+                    type="button"
+                    className="ml-3 underline"
+                    onClick={() => loadProjectStatuses()}
+                  >
+                    ลองใหม่
+                  </button>
+                </div>
+              )}
               <select
                 className="form-field"
                 name="status"
-                value={form.status}
+                value={selectedStatusValue}
                 onChange={handleChange}
+                disabled={projectStatusesLoading || (!statusOptions.length && Boolean(projectStatusesError))}
               >
-                {projectStatuses.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
+                {projectStatusesLoading && <option value="">กำลังโหลดสถานะงาน</option>}
+                {!projectStatusesLoading && !statusOptions.length && (
+                  <option value="">ยังไม่มีสถานะงาน</option>
+                )}
+                {statusOptions.map((status) => (
+                  <option key={status.id} value={status.id || status.slug || status.name}>
+                    {status.name}
                   </option>
                 ))}
               </select>

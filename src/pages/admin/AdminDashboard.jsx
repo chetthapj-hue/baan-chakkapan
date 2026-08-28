@@ -4,11 +4,13 @@ import { Link } from 'react-router-dom'
 import StatusBadge from '../../components/StatusBadge'
 import { useProjects } from '../../hooks/useProjects'
 import { getContactStats } from '../../services/contactService'
+import { getAdminProjectStatuses } from '../../services/projectStatusService'
 import { formatDateThai } from '../../utils/formatters'
 
 const AdminDashboard = () => {
   const { projects } = useProjects()
   const [contactStats, setContactStats] = useState({ total: 0, unread: 0 })
+  const [projectStatuses, setProjectStatuses] = useState([])
 
   useEffect(() => {
     let active = true
@@ -26,19 +28,44 @@ const AdminDashboard = () => {
         if (active) setContactStats({ total: 0, unread: 0 })
       })
 
+    getAdminProjectStatuses()
+      .then((statuses) => {
+        if (active) setProjectStatuses(statuses)
+      })
+      .catch(() => {
+        if (active) setProjectStatuses([])
+      })
+
     return () => {
       active = false
     }
   }, [])
 
-  const completed = projects.filter((project) => project.status === 'สร้างเสร็จแล้ว')
-  const building = projects.filter((project) => project.status === 'กำลังก่อสร้าง')
+  const getStatusCount = (status) =>
+    projects.filter((project) => {
+      if (!status) return false
+      return (
+        project.statusId === status.id ||
+        project.statusSlug === status.slug ||
+        project.status === status.name
+      )
+    }).length
+
+  const summaryStatuses = projectStatuses.slice(0, 2)
   const latestProjects = projects.slice(0, 5)
 
   const stats = [
     { label: 'ผลงานทั้งหมด', value: projects.length, icon: FolderKanban },
-    { label: 'สร้างเสร็จแล้ว', value: completed.length, icon: Building2 },
-    { label: 'กำลังก่อสร้าง', value: building.length, icon: Timer },
+    {
+      label: summaryStatuses[0]?.name || 'สถานะงานที่ 1',
+      value: getStatusCount(summaryStatuses[0]),
+      icon: Building2,
+    },
+    {
+      label: summaryStatuses[1]?.name || 'สถานะงานที่ 2',
+      value: getStatusCount(summaryStatuses[1]),
+      icon: Timer,
+    },
     {
       label: 'ข้อความติดต่อ',
       value: contactStats.total,
@@ -105,7 +132,7 @@ const AdminDashboard = () => {
                   อัปเดต {formatDateThai(project.updatedAt)}
                 </p>
               </div>
-              <StatusBadge value={project.status} />
+              <StatusBadge value={project.status} color={project.statusColor} />
               <StatusBadge value={project.publishStatus} />
             </div>
           ))}

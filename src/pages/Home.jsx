@@ -64,11 +64,11 @@ const heroStats = [
   ["96%", "ความพึงพอใจจากลูกค้า"],
 ];
 
-const buildBrief = [
-  { icon: HomeIcon, label: "บ้าน", value: "ทรงเรียบ คม สว่าง" },
-  { icon: Ruler, label: "วางแปลน", value: "ครบพื้นที่ใช้งานจริง" },
-  { icon: Layers, label: "งานก่อสร้าง", value: "ดูแลเป็นขั้นตอน" },
-];
+// const buildBrief = [
+//   { icon: HomeIcon, label: "บ้าน", value: "ทรงเรียบ คม สว่าง" },
+//   { icon: Ruler, label: "วางแปลน", value: "ครบพื้นที่ใช้งานจริง" },
+//   { icon: Layers, label: "งานก่อสร้าง", value: "ดูแลเป็นขั้นตอน" },
+// ];
 
 const Home = () => {
   const [publishedProjects, setPublishedProjects] = useState([]);
@@ -179,7 +179,7 @@ const Home = () => {
               </div>
             </div>
 
-            <aside className="surface-dark hidden rounded-lg p-5 lg:block">
+            {/* <aside className="surface-dark hidden rounded-lg p-5 lg:block">
               <div className="flex items-center gap-2 text-sm font-extrabold text-white">
                 <BadgeCheck size={18} className="text-[#B28A55]" /> Modern Build
                 Brief
@@ -205,7 +205,7 @@ const Home = () => {
                   );
                 })}
               </div>
-            </aside>
+            </aside> */}
           </div>
         </div>
       </section>
@@ -306,7 +306,7 @@ const Home = () => {
             <iframe
               className="h-full w-full"
               src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-              title="วิดีโอแนะนำบริษัทบ้านจักรพันธุ์"
+              title="วิดีโอแนะนำบริษัทบ้านจักรพันธ์"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />

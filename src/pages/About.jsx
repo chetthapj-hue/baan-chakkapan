@@ -14,7 +14,7 @@ const team = [
     id: "team-member-1",
     nickname: "จักร",
     fullName: "พันธนนท์ สุปินนะ",
-    role: "ผู้ก่ตั้งบริษัท",
+    role: "ผู้ก่อตั้งบริษัท",
     phone: "083-481-8025",
   },
   {
