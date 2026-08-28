@@ -28,7 +28,7 @@ const team = [
     id: "team-member-3",
     nickname: "นัท",
     fullName: "ณัฐพล กาวิล",
-    role: "ผู้สถาปนิก",
+    role: "สถาปนิก",
     phone: "099-508-5983",
   },
   {

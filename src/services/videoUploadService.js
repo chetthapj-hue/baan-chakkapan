@@ -32,8 +32,8 @@ export const validateVideoFile = (file) => {
   return ''
 }
 
-export const getProjectVideoUploadSignature = async (file) =>
-  apiRequest('/uploads/project-video/signature', {
+const getVideoUploadSignature = async (file, path) =>
+  apiRequest(path, {
     method: 'POST',
     auth: true,
     body: {
@@ -43,8 +43,14 @@ export const getProjectVideoUploadSignature = async (file) =>
     },
   })
 
-export const uploadVideoToCloudinary = async ({ file, onProgress }) => {
-  const signature = await getProjectVideoUploadSignature(file)
+export const getProjectVideoUploadSignature = (file) =>
+  getVideoUploadSignature(file, '/uploads/project-video/signature')
+
+export const getHomepageVideoUploadSignature = (file) =>
+  getVideoUploadSignature(file, '/uploads/homepage-video/signature')
+
+const uploadSignedVideoToCloudinary = async ({ file, onProgress, getSignature }) => {
+  const signature = await getSignature(file)
   const formData = new FormData()
 
   formData.append('file', file)
@@ -95,11 +101,32 @@ export const uploadVideoToCloudinary = async ({ file, onProgress }) => {
   })
 }
 
+export const uploadVideoToCloudinary = ({ file, onProgress }) =>
+  uploadSignedVideoToCloudinary({
+    file,
+    onProgress,
+    getSignature: getProjectVideoUploadSignature,
+  })
+
+export const uploadHomepageVideoToCloudinary = ({ file, onProgress }) =>
+  uploadSignedVideoToCloudinary({
+    file,
+    onProgress,
+    getSignature: getHomepageVideoUploadSignature,
+  })
+
 export const deleteUploadedVideo = async ({ publicId, projectId }) =>
   apiRequest('/uploads/project-video', {
     method: 'DELETE',
     auth: true,
     body: { publicId, projectId },
+  })
+
+export const deleteHomepageVideo = async (publicId) =>
+  apiRequest('/uploads/homepage-video', {
+    method: 'DELETE',
+    auth: true,
+    body: { publicId },
   })
 
 export const getVideoFileSummary = (file) =>
