@@ -34,9 +34,8 @@ const Navbar = () => {
         <div className="hidden items-center gap-3 md:flex">
           <Link
             to="/admin/login"
-            className="btn-ghost border-white/28 bg-white text-sm"
+            className="hidden"
           >
-            Admin
           </Link>
           <Link to="/contact" className="btn-secondary text-sm">
             ปรึกษาสร้างบ้าน
@@ -67,7 +66,7 @@ const Navbar = () => {
             ))}
             <Link
               to="/admin/login"
-              className="btn-ghost mt-2 border-white/30 bg-white"
+              className="hidden"
               onClick={() => setOpen(false)}
             >
               แอดมิน

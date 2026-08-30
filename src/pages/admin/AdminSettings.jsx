@@ -47,6 +47,7 @@ const getVideoMode = (video) => video?.source || 'none'
 
 const AdminSettings = () => {
   const [form, setForm] = useState(defaultSiteSettings)
+  const [videoMode, setVideoMode] = useState(getVideoMode(defaultSiteSettings.homepageVideo))
   const [errors, setErrors] = useState({})
   const [imageError, setImageError] = useState('')
   const [videoError, setVideoError] = useState('')
@@ -62,7 +63,9 @@ const AdminSettings = () => {
   const loadSettings = useCallback(async () => {
     setIsLoading(true)
     try {
-      setForm(await getSiteSettings())
+      const settings = await getSiteSettings()
+      setForm(settings)
+      setVideoMode(getVideoMode(settings.homepageVideo))
       setErrors({})
       setVideoError('')
     } catch (error) {
@@ -108,6 +111,7 @@ const AdminSettings = () => {
   }
 
   const updateVideoMode = (mode) => {
+    setVideoMode(mode)
     setVideoError('')
     setVideoUploadProgress(0)
 
@@ -229,6 +233,7 @@ const AdminSettings = () => {
         title: form.homepageVideo.title || '',
         description: form.homepageVideo.description || '',
       })
+      setVideoMode('cloudinary')
       setPendingUploadedPublicId(uploadedVideo.publicId)
       setVideoFile(null)
       if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl)
@@ -263,6 +268,7 @@ const AdminSettings = () => {
           homepageVideo: { ...emptyHomepageVideo },
         })
         setForm(savedSettings)
+        setVideoMode(getVideoMode(savedSettings.homepageVideo))
         setErrors({})
         setVideoError('')
         showToast('ลบวิดีโอหน้าแรกเรียบร้อยแล้ว')
@@ -279,6 +285,7 @@ const AdminSettings = () => {
     setVideoPreviewUrl('')
     setVideoUploadProgress(0)
     setPendingUploadedPublicId('')
+    setVideoMode('none')
     updateHomepageVideo({ ...emptyHomepageVideo })
     showToast('ล้างข้อมูลวิดีโอแล้ว กดบันทึกเพื่อปิดการแสดงผล')
   }
@@ -301,17 +308,25 @@ const AdminSettings = () => {
           url: form.homepageVideo.url?.trim() || '',
         },
       })
+      if (
+        pendingUploadedPublicId &&
+        savedSettings.homepageVideo?.publicId !== pendingUploadedPublicId
+      ) {
+        await deleteHomepageVideo(pendingUploadedPublicId).catch(() => {})
+      }
       setForm(savedSettings)
+      setVideoMode(getVideoMode(savedSettings.homepageVideo))
       setPendingUploadedPublicId('')
       setErrors({})
       showToast('บันทึกการตั้งค่าหน้าแรกเรียบร้อยแล้ว')
     } catch (error) {
-      if (
-        pendingUploadedPublicId &&
-        form.homepageVideo?.publicId === pendingUploadedPublicId
-      ) {
+      if (pendingUploadedPublicId) {
         await deleteHomepageVideo(pendingUploadedPublicId).catch(() => {})
         setPendingUploadedPublicId('')
+        if (form.homepageVideo?.publicId === pendingUploadedPublicId) {
+          updateHomepageVideo({ ...emptyHomepageVideo })
+          setVideoMode('none')
+        }
       }
       showToast(error.message || 'บันทึกการตั้งค่าไม่สำเร็จ', 'error')
     } finally {
@@ -324,6 +339,7 @@ const AdminSettings = () => {
     try {
       const defaultSettings = await resetSiteSettings()
       setForm(defaultSettings)
+      setVideoMode(getVideoMode(defaultSettings.homepageVideo))
       setErrors({})
       setImageError('')
       setVideoError('')
@@ -337,7 +353,6 @@ const AdminSettings = () => {
   }
 
   const homepageVideo = form.homepageVideo || emptyHomepageVideo
-  const videoMode = getVideoMode(homepageVideo)
 
   if (isLoading) {
     return (
