@@ -37,3 +37,13 @@ export const deleteAdmin = (id) =>
     method: 'DELETE',
     auth: true,
   })
+
+export const resetAdminPassword = (id, currentPassword) =>
+  apiRequest(`/admins/${encodeURIComponent(id)}/reset-password`, {
+    method: 'POST',
+    auth: true,
+    body: { currentPassword },
+  })
+
+export const listAdminAuditLogs = () =>
+  apiRequest('/admins/audit-logs', { auth: true })
