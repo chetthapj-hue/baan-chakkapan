@@ -17,6 +17,7 @@ import AdminUsers from '../pages/admin/AdminUsers'
 import AdminContacts from '../pages/admin/AdminContacts'
 import AdminHouseTypes from '../pages/admin/AdminHouseTypes'
 import AdminProjectStatuses from '../pages/admin/AdminProjectStatuses'
+import AdminChangePassword from '../pages/admin/AdminChangePassword'
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -31,6 +32,7 @@ const AppRoutes = () => (
 
       <Route path="admin/login" element={<AdminLogin />} />
       <Route path="admin" element={<ProtectedRoute />}>
+        <Route path="change-password" element={<AdminChangePassword />} />
         <Route element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
           <Route path="projects" element={<AdminProjects />} />

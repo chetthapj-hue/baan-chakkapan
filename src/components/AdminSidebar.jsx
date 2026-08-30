@@ -1,6 +1,7 @@
 import {
   FolderKanban,
   Home,
+  KeyRound,
   LayoutDashboard,
   ListChecks,
   LogOut,
@@ -85,6 +86,9 @@ const AdminSidebar = () => {
         )}
         <NavLink to="/admin/settings" className={adminNavClass}>
           <Settings size={18} /> ตั้งค่าหน้าแรก
+        </NavLink>
+        <NavLink to="/admin/change-password" className={adminNavClass}>
+          <KeyRound size={18} /> เปลี่ยนรหัสผ่าน
         </NavLink>
       </nav>
       {currentAdmin && (

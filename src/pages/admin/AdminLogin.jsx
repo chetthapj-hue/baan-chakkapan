@@ -1,7 +1,11 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import Logo from '../../components/Logo'
-import { isAdminLoggedIn, loginAdmin } from '../../services/authService'
+import {
+  isAdminLoggedIn,
+  isPasswordChangeRequired,
+  loginAdmin,
+} from '../../services/authService'
 
 const AdminLogin = () => {
   const [credentials, setCredentials] = useState({ username: '', password: '' })
@@ -9,7 +13,14 @@ const AdminLogin = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const navigate = useNavigate()
 
-  if (isAdminLoggedIn()) return <Navigate to="/admin" replace />
+  if (isAdminLoggedIn()) {
+    return (
+      <Navigate
+        to={isPasswordChangeRequired() ? '/admin/change-password' : '/admin'}
+        replace
+      />
+    )
+  }
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -20,15 +31,15 @@ const AdminLogin = () => {
     event.preventDefault()
     setError('')
     setIsSubmitting(true)
-    const success = await loginAdmin(credentials)
+    const result = await loginAdmin(credentials)
     setIsSubmitting(false)
 
-    if (!success) {
+    if (!result.success) {
       setError('Username หรือ Password ไม่ถูกต้อง')
       return
     }
 
-    navigate('/admin')
+    navigate(result.mustChangePassword ? '/admin/change-password' : '/admin')
   }
 
   return (
