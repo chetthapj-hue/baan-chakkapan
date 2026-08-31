@@ -26,9 +26,6 @@ const Footer = () => (
           <Link to="/contact" className="hover:text-white">
             ติดต่อเรา
           </Link>
-          <Link to="/admin/login" className="hidden">
-            ระบบแอดมินสาธิต
-          </Link>
         </div>
       </div>
       <div>
