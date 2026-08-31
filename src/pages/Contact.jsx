@@ -1,4 +1,4 @@
-import { Mail, MapPin, MessageCircle, Phone, Send } from 'lucide-react'
+import { Mail, MapPin, MessageCircle, Navigation, Phone, Send } from 'lucide-react'
 import { useState } from 'react'
 import FormInput from '../components/FormInput'
 import Toast from '../components/Toast'
@@ -19,6 +19,11 @@ const Contact = () => {
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast, showToast, clearToast } = useToast()
+  const mapQuery = encodeURIComponent(companyInfo.mapQuery || companyInfo.address)
+  const mapEmbedUrl = `https://www.google.com/maps?q=${mapQuery}&output=embed`
+  const mapDirectionsUrl =
+    companyInfo.mapUrl ||
+    `https://www.google.com/maps/search/?api=1&query=${mapQuery}`
 
   const validate = () => {
     const nextErrors = {}
@@ -114,8 +119,31 @@ const Contact = () => {
               <p className="font-bold text-[#0E4F52]">เวลาเปิดทำการ</p>
               <p className="mt-2 text-[#5e6256]">{companyInfo.hours}</p>
             </div>
-            <div className="flex min-h-64 items-center justify-center rounded-lg border border-dashed border-[#0E4F52]/20 bg-white p-6 text-center text-[#5e6256]">
-              พื้นที่แผนที่สำหรับแสดงตำแหน่งสำนักงานและจุดนัดหมายโครงการ
+            <div className="surface overflow-hidden rounded-lg">
+              <div className="p-5">
+                <p className="flex items-center gap-2 text-sm font-bold text-[#0E4F52]">
+                  <MapPin size={18} /> แผนที่สำนักงาน
+                </p>
+                <p className="mt-2 leading-7 text-[#5e6256]">
+                  {companyInfo.address}
+                </p>
+                <a
+                  href={mapDirectionsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-primary mt-4 w-fit"
+                >
+                  <Navigation size={18} /> เปิด Google Maps
+                </a>
+              </div>
+              <iframe
+                title="แผนที่บ้านจักรพันธ์"
+                src={mapEmbedUrl}
+                className="h-72 w-full border-0 md:h-80"
+                loading="lazy"
+                allowFullScreen
+                referrerPolicy="no-referrer-when-downgrade"
+              />
             </div>
           </div>
 

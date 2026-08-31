@@ -473,8 +473,8 @@ export const companyInfo = {
   email: 'jochakkapan@gmail.com',
   hours: 'จันทร์-เสาร์ 08:00-17:00 น.',
   address: 'เชียงใหม่, Chiang Mai, Thailand, 50160',
+  mapQuery: '18.4069805,98.6757368',
+  mapUrl: 'https://maps.app.goo.gl/jeTdhzovg7Pu4g3v6',
 }
-
-
 
 
