@@ -32,11 +32,6 @@ const Navbar = () => {
           ))}
         </div>
         <div className="hidden items-center gap-3 md:flex">
-          <Link
-            to="/admin/login"
-            className="hidden"
-          >
-          </Link>
           <Link to="/contact" className="btn-secondary text-sm">
             ปรึกษาสร้างบ้าน
           </Link>
@@ -64,13 +59,6 @@ const Navbar = () => {
                 {item.label}
               </NavLink>
             ))}
-            <Link
-              to="/admin/login"
-              className="hidden"
-              onClick={() => setOpen(false)}
-            >
-              แอดมิน
-            </Link>
             <Link
               to="/contact"
               className="btn-secondary"
