@@ -1,6 +1,10 @@
 import { Award, Building2, ShieldCheck, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import ImageWithFallback from "../components/ImageWithFallback";
-import { houseImages } from "../data/mockData";
+import {
+  defaultSiteSettings,
+  getSiteSettings,
+} from "../services/siteSettingsService";
 
 const stats = [
   ["120+", "บ้านที่ส่งมอบ"],
@@ -47,7 +51,58 @@ const team = [
   },
 ];
 
-const About = () => (
+const defaultAboutHeroImage = defaultSiteSettings.aboutPage.heroImage;
+
+const getAboutHeroImage = (settings = defaultSiteSettings) => {
+  const heroImage = settings.aboutPage?.heroImage || defaultAboutHeroImage;
+
+  return {
+    url: heroImage.secureUrl || heroImage.url || defaultAboutHeroImage.url,
+    alt: heroImage.alt || defaultAboutHeroImage.alt,
+  };
+};
+
+const About = () => {
+  const [aboutHeroImage, setAboutHeroImage] = useState(() =>
+    getAboutHeroImage(defaultSiteSettings),
+  );
+  const [settingsLoading, setSettingsLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadAboutSettings = () => {
+      setSettingsLoading(true);
+      getSiteSettings()
+        .then((settings) => {
+          if (active) setAboutHeroImage(getAboutHeroImage(settings));
+        })
+        .catch(() => {
+          if (active) setAboutHeroImage(getAboutHeroImage(defaultSiteSettings));
+        })
+        .finally(() => {
+          if (active) setSettingsLoading(false);
+        });
+    };
+
+    loadAboutSettings();
+    window.addEventListener("storage", loadAboutSettings);
+    window.addEventListener(
+      "baanjakkraphan:site-settings-updated",
+      loadAboutSettings,
+    );
+
+    return () => {
+      active = false;
+      window.removeEventListener("storage", loadAboutSettings);
+      window.removeEventListener(
+        "baanjakkraphan:site-settings-updated",
+        loadAboutSettings,
+      );
+    };
+  }, []);
+
+  return (
   <>
     <section className="bg-[#106772] py-16 text-white">
       <div className="container-page grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
@@ -61,12 +116,17 @@ const About = () => (
             ไปจนถึงควบคุมงานก่อสร้างและส่งมอบบ้านให้พร้อมใช้งาน
           </p>
         </div>
-        <div className="aspect-[4/3] overflow-hidden rounded-lg">
-          <ImageWithFallback
-            src={houseImages[2].url}
-            alt={houseImages[2].alt}
-            className="h-full w-full object-cover"
-          />
+        <div className="aspect-[4/3] overflow-hidden rounded-lg bg-[#EAF4F2]">
+          {settingsLoading ? (
+            <div className="h-full w-full animate-pulse bg-gradient-to-br from-white/30 via-[#EAF4F2] to-[#B28A55]/20" />
+          ) : (
+            <ImageWithFallback
+              src={aboutHeroImage.url}
+              alt={aboutHeroImage.alt}
+              loading="eager"
+              className="h-full w-full object-cover"
+            />
+          )}
         </div>
       </div>
     </section>
@@ -192,6 +252,7 @@ const About = () => (
       </div>
     </section>
   </>
-);
+  );
+};
 
 export default About;

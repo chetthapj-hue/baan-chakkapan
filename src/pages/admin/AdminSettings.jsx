@@ -14,6 +14,12 @@ import ImageWithFallback from '../../components/ImageWithFallback'
 import Toast from '../../components/Toast'
 import { useToast } from '../../hooks/useToast'
 import {
+  deleteAboutHeroImage,
+  formatFileSize,
+  uploadAboutHeroImageToCloudinary,
+  validateSingleImageFile,
+} from '../../services/imageUploadService'
+import {
   defaultSiteSettings,
   emptyHomepageVideo,
   getSiteSettings,
@@ -27,8 +33,6 @@ import {
   validateVideoFile,
 } from '../../services/videoUploadService'
 
-const maxImageSize = 5 * 1024 * 1024
-
 const readFileAsDataUrl = (file) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -37,27 +41,30 @@ const readFileAsDataUrl = (file) =>
     reader.readAsDataURL(file)
   })
 
-const validateImage = (file) => {
-  if (!file.type.startsWith('image/')) return 'รองรับเฉพาะไฟล์รูปภาพ'
-  if (file.size > maxImageSize) return 'รูปภาพต้องไม่เกิน 5 MB'
-  return ''
-}
-
 const getVideoMode = (video) => video?.source || 'none'
+
+const getAboutHeroImage = (settings = defaultSiteSettings) =>
+  settings.aboutPage?.heroImage || defaultSiteSettings.aboutPage.heroImage
 
 const AdminSettings = () => {
   const [form, setForm] = useState(defaultSiteSettings)
   const [videoMode, setVideoMode] = useState(getVideoMode(defaultSiteSettings.homepageVideo))
   const [errors, setErrors] = useState({})
   const [imageError, setImageError] = useState('')
+  const [aboutImageError, setAboutImageError] = useState('')
   const [videoError, setVideoError] = useState('')
   const [videoFile, setVideoFile] = useState(null)
+  const [aboutImageFile, setAboutImageFile] = useState(null)
   const [videoPreviewUrl, setVideoPreviewUrl] = useState('')
+  const [aboutImagePreviewUrl, setAboutImagePreviewUrl] = useState('')
   const [videoUploadProgress, setVideoUploadProgress] = useState(0)
+  const [aboutImageUploadProgress, setAboutImageUploadProgress] = useState(0)
   const [pendingUploadedPublicId, setPendingUploadedPublicId] = useState('')
+  const [pendingUploadedAboutImagePublicId, setPendingUploadedAboutImagePublicId] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isVideoUploading, setIsVideoUploading] = useState(false)
+  const [isAboutImageUploading, setIsAboutImageUploading] = useState(false)
   const { toast, showToast, clearToast } = useToast()
 
   const loadSettings = useCallback(async () => {
@@ -67,9 +74,14 @@ const AdminSettings = () => {
       setForm(settings)
       setVideoMode(getVideoMode(settings.homepageVideo))
       setErrors({})
+      setImageError('')
+      setAboutImageError('')
       setVideoError('')
+      setAboutImageFile(null)
+      setAboutImagePreviewUrl('')
+      setAboutImageUploadProgress(0)
     } catch (error) {
-      showToast(error.message || 'โหลดการตั้งค่าหน้าแรกไม่สำเร็จ', 'error')
+      showToast(error.message || 'โหลดการตั้งค่าเว็บไซต์ไม่สำเร็จ', 'error')
     } finally {
       setIsLoading(false)
     }
@@ -90,6 +102,13 @@ const AdminSettings = () => {
     [videoPreviewUrl],
   )
 
+  useEffect(
+    () => () => {
+      if (aboutImagePreviewUrl) URL.revokeObjectURL(aboutImagePreviewUrl)
+    },
+    [aboutImagePreviewUrl],
+  )
+
   const update = (event) => {
     const { name, value } = event.target
     setForm((current) => ({ ...current, [name]: value }))
@@ -106,8 +125,26 @@ const AdminSettings = () => {
     }))
   }
 
+  const updateAboutHeroImage = (nextImage) => {
+    setForm((current) => ({
+      ...current,
+      aboutPage: {
+        ...current.aboutPage,
+        heroImage: {
+          ...defaultSiteSettings.aboutPage.heroImage,
+          ...current.aboutPage?.heroImage,
+          ...nextImage,
+        },
+      },
+    }))
+  }
+
   const updateVideoText = (name, value) => {
     updateHomepageVideo({ [name]: value })
+  }
+
+  const updateAboutHeroAlt = (value) => {
+    updateAboutHeroImage({ alt: value })
   }
 
   const updateVideoMode = (mode) => {
@@ -145,9 +182,22 @@ const AdminSettings = () => {
   const validate = () => {
     const nextErrors = {}
     const homepageVideo = form.homepageVideo || emptyHomepageVideo
+    const aboutHeroImage = getAboutHeroImage(form)
 
     if (!form.homeHeroImage?.trim()) nextErrors.homeHeroImage = 'กรุณาใส่ URL รูปหน้าปก'
     if (!form.homeHeroAlt?.trim()) nextErrors.homeHeroAlt = 'กรุณากรอกคำอธิบายรูปหน้าปก'
+
+    if (!aboutHeroImage.url?.trim() && !aboutHeroImage.secureUrl?.trim()) {
+      nextErrors.aboutHeroImage = 'กรุณาอัปโหลดรูปภาพหน้าเกี่ยวกับเรา'
+    }
+
+    if (!aboutHeroImage.alt?.trim()) {
+      nextErrors.aboutHeroAlt = 'กรุณากรอกข้อความ Alt ของรูปหน้าเกี่ยวกับเรา'
+    }
+
+    if (aboutHeroImage.alt?.trim().length > 180) {
+      nextErrors.aboutHeroAlt = 'ข้อความ Alt ต้องไม่เกิน 180 ตัวอักษร'
+    }
 
     if (homepageVideo.title?.length > 120) {
       nextErrors.video = 'หัวข้อวิดีโอต้องไม่เกิน 120 ตัวอักษร'
@@ -169,6 +219,10 @@ const AdminSettings = () => {
       nextErrors.video = 'กรุณาอัปโหลดวิดีโอให้เสร็จก่อนบันทึก'
     }
 
+    if (isAboutImageUploading || aboutImageFile) {
+      nextErrors.aboutHeroImage = 'กรุณารอให้อัปโหลดรูปหน้าเกี่ยวกับเราเสร็จก่อน'
+    }
+
     setErrors(nextErrors)
     return Object.keys(nextErrors).length === 0
   }
@@ -178,7 +232,7 @@ const AdminSettings = () => {
     event.target.value = ''
     if (!file) return
 
-    const error = validateImage(file)
+    const error = validateSingleImageFile(file)
     if (error) {
       setImageError(error)
       return
@@ -191,6 +245,59 @@ const AdminSettings = () => {
       homeHeroImage: dataUrl,
       homeHeroAlt: current.homeHeroAlt || 'รูปหน้าปกบ้านจักรพันธุ์',
     }))
+  }
+
+  const handleAboutHeroFile = async (event) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+
+    const error = validateSingleImageFile(file)
+    if (error) {
+      setAboutImageError(error)
+      showToast(error, 'error')
+      return
+    }
+
+    const previousPendingPublicId = pendingUploadedAboutImagePublicId
+    const previewUrl = URL.createObjectURL(file)
+    const currentAlt = getAboutHeroImage(form).alt || 'รูปบ้านหน้าเกี่ยวกับเรา'
+
+    setAboutImageFile(file)
+    setAboutImagePreviewUrl(previewUrl)
+    setAboutImageError('')
+    setAboutImageUploadProgress(1)
+    setIsAboutImageUploading(true)
+
+    try {
+      const uploadedImage = await uploadAboutHeroImageToCloudinary({
+        file,
+        onProgress: setAboutImageUploadProgress,
+      })
+
+      updateAboutHeroImage({
+        ...uploadedImage,
+        alt: currentAlt,
+      })
+      setPendingUploadedAboutImagePublicId(uploadedImage.publicId)
+      setAboutImageFile(null)
+      setAboutImagePreviewUrl('')
+      setAboutImageError('')
+
+      if (previousPendingPublicId && previousPendingPublicId !== uploadedImage.publicId) {
+        await deleteAboutHeroImage(previousPendingPublicId).catch(() => {})
+      }
+
+      showToast('อัปโหลดรูปภาพหน้าเกี่ยวกับเราเรียบร้อยแล้ว กรุณากดบันทึกการเปลี่ยนแปลง')
+    } catch (error) {
+      setAboutImageFile(null)
+      setAboutImagePreviewUrl('')
+      setAboutImageUploadProgress(0)
+      setAboutImageError(error.message || 'อัปโหลดรูปภาพไม่สำเร็จ')
+      showToast(error.message || 'อัปโหลดรูปภาพไม่สำเร็จ', 'error')
+    } finally {
+      setIsAboutImageUploading(false)
+    }
   }
 
   const handleVideoFile = (event) => {
@@ -293,41 +400,80 @@ const AdminSettings = () => {
   const handleSubmit = async (event) => {
     event.preventDefault()
     if (!validate()) {
-      showToast('กรุณาตรวจสอบข้อมูลหน้าแรก', 'error')
+      showToast('กรุณาตรวจสอบข้อมูลก่อนบันทึก', 'error')
       return
     }
+
+    const aboutHeroImage = getAboutHeroImage(form)
+    const pendingVideoPublicId = pendingUploadedPublicId
+    const pendingAboutImagePublicId = pendingUploadedAboutImagePublicId
 
     setIsSaving(true)
     try {
       const savedSettings = await saveSiteSettings({
         ...form,
+        homeHeroImage: form.homeHeroImage?.trim() || '',
+        homeHeroAlt: form.homeHeroAlt?.trim() || '',
         homepageVideo: {
           ...form.homepageVideo,
           title: form.homepageVideo.title?.trim() || '',
           description: form.homepageVideo.description?.trim() || '',
           url: form.homepageVideo.url?.trim() || '',
         },
+        aboutPage: {
+          ...form.aboutPage,
+          heroImage: {
+            ...aboutHeroImage,
+            url: (aboutHeroImage.secureUrl || aboutHeroImage.url || '').trim(),
+            secureUrl: (aboutHeroImage.secureUrl || aboutHeroImage.url || '').trim(),
+            alt: aboutHeroImage.alt?.trim() || '',
+          },
+        },
       })
+      const latestSettings = await getSiteSettings().catch(() => savedSettings)
+
       if (
-        pendingUploadedPublicId &&
-        savedSettings.homepageVideo?.publicId !== pendingUploadedPublicId
+        pendingVideoPublicId &&
+        savedSettings.homepageVideo?.publicId !== pendingVideoPublicId
       ) {
-        await deleteHomepageVideo(pendingUploadedPublicId).catch(() => {})
+        await deleteHomepageVideo(pendingVideoPublicId).catch(() => {})
       }
-      setForm(savedSettings)
-      setVideoMode(getVideoMode(savedSettings.homepageVideo))
+
+      if (
+        pendingAboutImagePublicId &&
+        savedSettings.aboutPage?.heroImage?.publicId !== pendingAboutImagePublicId
+      ) {
+        await deleteAboutHeroImage(pendingAboutImagePublicId).catch(() => {})
+      }
+
+      setForm(latestSettings)
+      setVideoMode(getVideoMode(latestSettings.homepageVideo))
       setPendingUploadedPublicId('')
+      setPendingUploadedAboutImagePublicId('')
+      setAboutImageFile(null)
+      setAboutImagePreviewUrl('')
+      setAboutImageUploadProgress(0)
       setErrors({})
-      showToast('บันทึกการตั้งค่าหน้าแรกเรียบร้อยแล้ว')
+      setAboutImageError('')
+      showToast('บันทึกการตั้งค่าเว็บไซต์เรียบร้อยแล้ว')
     } catch (error) {
-      if (pendingUploadedPublicId) {
-        await deleteHomepageVideo(pendingUploadedPublicId).catch(() => {})
+      if (pendingVideoPublicId) {
+        await deleteHomepageVideo(pendingVideoPublicId).catch(() => {})
         setPendingUploadedPublicId('')
-        if (form.homepageVideo?.publicId === pendingUploadedPublicId) {
+        if (form.homepageVideo?.publicId === pendingVideoPublicId) {
           updateHomepageVideo({ ...emptyHomepageVideo })
           setVideoMode('none')
         }
       }
+
+      if (pendingAboutImagePublicId) {
+        await deleteAboutHeroImage(pendingAboutImagePublicId).catch(() => {})
+        setPendingUploadedAboutImagePublicId('')
+        if (getAboutHeroImage(form).publicId === pendingAboutImagePublicId) {
+          updateAboutHeroImage(defaultSiteSettings.aboutPage.heroImage)
+        }
+      }
+
       showToast(error.message || 'บันทึกการตั้งค่าไม่สำเร็จ', 'error')
     } finally {
       setIsSaving(false)
@@ -337,14 +483,24 @@ const AdminSettings = () => {
   const handleReset = async () => {
     setIsSaving(true)
     try {
+      if (pendingUploadedAboutImagePublicId) {
+        await deleteAboutHeroImage(pendingUploadedAboutImagePublicId).catch(() => {})
+      }
+
       const defaultSettings = await resetSiteSettings()
-      setForm(defaultSettings)
-      setVideoMode(getVideoMode(defaultSettings.homepageVideo))
+      const latestSettings = await getSiteSettings().catch(() => defaultSettings)
+      setForm(latestSettings)
+      setVideoMode(getVideoMode(latestSettings.homepageVideo))
       setErrors({})
       setImageError('')
+      setAboutImageError('')
       setVideoError('')
       setPendingUploadedPublicId('')
-      showToast('คืนค่ารูปหน้าปกและปิดวิดีโอหน้าแรกแล้ว')
+      setPendingUploadedAboutImagePublicId('')
+      setAboutImageFile(null)
+      setAboutImagePreviewUrl('')
+      setAboutImageUploadProgress(0)
+      showToast('คืนค่าเริ่มต้นของเว็บไซต์เรียบร้อยแล้ว')
     } catch (error) {
       showToast(error.message || 'คืนค่าเริ่มต้นไม่สำเร็จ', 'error')
     } finally {
@@ -353,6 +509,10 @@ const AdminSettings = () => {
   }
 
   const homepageVideo = form.homepageVideo || emptyHomepageVideo
+  const aboutHeroImage = getAboutHeroImage(form)
+  const aboutPreviewSrc =
+    aboutImagePreviewUrl || aboutHeroImage.secureUrl || aboutHeroImage.url
+  const isBusy = isSaving || isVideoUploading || isAboutImageUploading
 
   if (isLoading) {
     return (
@@ -369,10 +529,10 @@ const AdminSettings = () => {
       <div>
         <p className="text-sm font-bold uppercase text-[#0E4F52]">Settings</p>
         <h1 className="text-3xl font-extrabold text-[#0E4F52]">
-          ตั้งค่าหน้าแรก
+          ตั้งค่าเว็บไซต์
         </h1>
         <p className="mt-2 text-[#5e6256]">
-          จัดการรูปหน้าปกและวิดีโอแนะนำบริษัทที่แสดงบนหน้าแรก
+          จัดการรูปหน้าปก วิดีโอหน้าแรก และรูปภาพหน้าเกี่ยวกับเรา
         </p>
       </div>
 
@@ -404,14 +564,14 @@ const AdminSettings = () => {
                   {imageError}
                 </p>
               )}
-              <label className="btn-ghost cursor-pointer justify-start">
+              <label className="btn-ghost cursor-pointer justify-start disabled:cursor-not-allowed disabled:opacity-60">
                 <Upload size={18} /> อัปโหลดรูปหน้าปก
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
                   className="sr-only"
                   onChange={handleHeroFile}
-                  disabled={isSaving || isVideoUploading}
+                  disabled={isBusy}
                 />
               </label>
             </div>
@@ -429,6 +589,89 @@ const AdminSettings = () => {
               />
             </div>
           </section>
+        </section>
+
+        <section className="rounded-lg bg-white p-5 shadow-sm">
+          <div className="mb-5 flex items-center gap-2 text-xl font-extrabold text-[#0E4F52]">
+            <ImagePlus size={22} /> ตั้งค่าหน้าเกี่ยวกับเรา
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="grid content-start gap-4">
+              <div>
+                <h2 className="text-lg font-extrabold text-[#0E4F52]">
+                  รูปภาพหน้าเกี่ยวกับเรา
+                </h2>
+                <p className="mt-1 text-sm text-[#5e6256]">
+                  รองรับ JPG, JPEG, PNG และ WebP ขนาดไม่เกิน 5 MB
+                </p>
+              </div>
+
+              <FormInput
+                label="ข้อความ Alt ของรูป"
+                name="aboutHeroAlt"
+                value={aboutHeroImage.alt}
+                error={errors.aboutHeroAlt}
+                onChange={(event) => updateAboutHeroAlt(event.target.value)}
+                maxLength={180}
+                required
+              />
+
+              {(aboutImageError || errors.aboutHeroImage) && (
+                <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-bold text-red-700">
+                  {aboutImageError || errors.aboutHeroImage}
+                </p>
+              )}
+
+              <label className="btn-ghost w-fit cursor-pointer disabled:cursor-not-allowed disabled:opacity-60">
+                <Upload size={18} /> อัปโหลดรูปใหม่
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  onChange={handleAboutHeroFile}
+                  disabled={isBusy}
+                />
+              </label>
+
+              {(isAboutImageUploading || aboutImageFile) && (
+                <div className="rounded-lg border border-[#0E4F52]/10 p-4">
+                  <p className="text-sm font-extrabold text-[#0E4F52]">
+                    {aboutImageFile
+                      ? `${aboutImageFile.name} (${formatFileSize(aboutImageFile.size)})`
+                      : 'กำลังอัปโหลดรูปภาพ'}
+                  </p>
+                  <div className="mt-3 h-3 overflow-hidden rounded-full bg-[#EAF4F2]">
+                    <div
+                      className="h-full rounded-full bg-[#0E4F52] transition-all"
+                      style={{ width: `${aboutImageUploadProgress}%` }}
+                    />
+                  </div>
+                  <p className="mt-1 text-xs font-bold text-[#5e6256]">
+                    กำลังอัปโหลด {aboutImageUploadProgress}%
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <h2 className="mb-4 text-lg font-extrabold text-[#0E4F52]">
+                ตัวอย่างรูปภาพหน้าเกี่ยวกับเรา
+              </h2>
+              <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-[#B28A55]/50 bg-[#EAF4F2]">
+                <ImageWithFallback
+                  src={aboutPreviewSrc}
+                  alt={aboutHeroImage.alt || 'ตัวอย่างรูปภาพหน้าเกี่ยวกับเรา'}
+                  className="h-full w-full object-cover"
+                />
+                {isAboutImageUploading && (
+                  <div className="absolute inset-0 grid place-items-center bg-[#0E4F52]/55 text-sm font-extrabold text-white">
+                    กำลังอัปโหลด {aboutImageUploadProgress}%
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </section>
 
         <section className="rounded-lg bg-white p-5 shadow-sm">
@@ -465,7 +708,7 @@ const AdminSettings = () => {
                       : 'border-[#0E4F52]/15 text-[#5e6256] hover:bg-[#EAF4F2]'
                   }`}
                   onClick={() => updateVideoMode(mode)}
-                  disabled={isSaving || isVideoUploading}
+                  disabled={isBusy}
                 >
                   <Icon size={17} /> {label}
                 </button>
@@ -563,13 +806,13 @@ const AdminSettings = () => {
                       accept="video/mp4,video/webm,video/quicktime,.mov"
                       className="sr-only"
                       onChange={handleVideoFile}
-                      disabled={isSaving || isVideoUploading}
+                      disabled={isBusy}
                     />
                   </label>
                   <button
                     type="button"
                     className="btn-primary"
-                    disabled={!videoFile || isSaving || isVideoUploading}
+                    disabled={!videoFile || isBusy}
                     onClick={uploadSelectedVideo}
                   >
                     <Upload size={18} />
@@ -580,7 +823,7 @@ const AdminSettings = () => {
                       type="button"
                       className="btn-ghost text-red-700"
                       onClick={clearVideo}
-                      disabled={isSaving || isVideoUploading}
+                      disabled={isBusy}
                     >
                       <Trash2 size={18} /> ลบวิดีโอ
                     </button>
@@ -602,16 +845,17 @@ const AdminSettings = () => {
             type="button"
             className="btn-ghost"
             onClick={handleReset}
-            disabled={isSaving || isVideoUploading}
+            disabled={isBusy}
           >
             <RotateCcw size={18} /> คืนค่าเริ่มต้น
           </button>
           <button
             type="submit"
             className="btn-primary"
-            disabled={isSaving || isVideoUploading || Boolean(videoFile)}
+            disabled={isBusy || Boolean(videoFile) || Boolean(aboutImageFile)}
           >
-            <Save size={18} /> {isSaving ? 'กำลังบันทึก' : 'บันทึก'}
+            <Save size={18} />
+            {isSaving ? 'กำลังบันทึก' : 'บันทึกการเปลี่ยนแปลง'}
           </button>
         </div>
       </form>

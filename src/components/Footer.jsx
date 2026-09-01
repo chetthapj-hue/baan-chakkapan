@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { companyInfo } from "../data/mockData";
 import Logo from "./Logo";
 
+const phoneHref = `tel:${companyInfo.phone.replace(/\s/g, "")}`;
+
 const Footer = () => (
   <footer className="bg-[#0E4F52] text-white">
     <div className="container-page grid gap-10 py-12 md:grid-cols-[1.25fr_1fr_1fr]">
@@ -31,12 +33,17 @@ const Footer = () => (
       <div>
         <h2 className="mb-4 text-base font-bold">ติดต่อบ้านจักรพันธ์</h2>
         <div className="grid gap-3 text-sm text-white/78">
-          <p className="flex items-center gap-2">
+          <a href={phoneHref} className="flex items-center gap-2 hover:text-white">
             <Phone size={16} /> {companyInfo.phone}
-          </p>
-          <p className="flex items-center gap-2">
-            <MessageCircle size={16} /> LINE ID{companyInfo.lineId}
-          </p>
+          </a>
+          <a
+            href={companyInfo.lineUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2 hover:text-white"
+          >
+            <MessageCircle size={16} /> LINE ID {companyInfo.lineId}
+          </a>
           <a
             href={companyInfo.facebookUrl}
             target="_blank"
@@ -45,12 +52,20 @@ const Footer = () => (
           >
             <Share2 size={16} /> {companyInfo.facebook}
           </a>
-          <p className="flex items-center gap-2">
+          <a
+            href={`mailto:${companyInfo.email}`}
+            className="flex items-center gap-2 hover:text-white"
+          >
             <Mail size={16} /> {companyInfo.email}
-          </p>
-          <p className="flex items-start gap-2">
+          </a>
+          <a
+            href={companyInfo.mapUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-start gap-2 hover:text-white"
+          >
             <MapPin className="mt-1" size={16} /> {companyInfo.address}
-          </p>
+          </a>
         </div>
       </div>
     </div>

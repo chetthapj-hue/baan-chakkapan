@@ -468,11 +468,12 @@ export const seedProjects = baseSeedProjects.map((project, index) => ({
 
 export const companyInfo = {
   phone: '083 481 8025',
-  lineId: 'jochak2028',
+  lineId: '@833zubjm',
+  lineUrl: 'https://line.me/R/ti/p/@559uwqbw',
   facebook: 'บ้านจักรพันธ์',
   facebookUrl: 'https://www.facebook.com/ckpbuilding',
   email: 'jochakkapan@gmail.com',
-  hours: 'จันทร์-เสาร์ 08:00-17:00 น.',
+  hours: 'จันทร์-เสาร์ 09:00-18:00 น.',
   address: 'เชียงใหม่, Chiang Mai, Thailand, 50160',
   mapQuery: '18.4069805,98.6757368',
   mapUrl: 'https://maps.app.goo.gl/jeTdhzovg7Pu4g3v6',

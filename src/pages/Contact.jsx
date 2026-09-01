@@ -1,4 +1,4 @@
-import { Mail, MapPin, MessageCircle, Navigation, Phone, Send } from 'lucide-react'
+import { Mail, MapPin, MessageCircle, Navigation, Phone, Send, Share2 } from 'lucide-react'
 import { useState } from 'react'
 import FormInput from '../components/FormInput'
 import Toast from '../components/Toast'
@@ -96,23 +96,54 @@ const Contact = () => {
         <div className="container-page grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="space-y-5">
             {[
-              { icon: Phone, label: 'โทร', value: companyInfo.phone },
+              {
+                icon: Phone,
+                label: 'โทร',
+                value: companyInfo.phone,
+                href: `tel:${companyInfo.phone.replace(/\s/g, '')}`,
+              },
               {
                 icon: MessageCircle,
                 label: 'LINE ID',
                 value: companyInfo.lineId,
+                href: companyInfo.lineUrl,
+                external: true,
               },
-              { icon: Mail, label: 'อีเมล', value: companyInfo.email },
-              { icon: MapPin, label: 'ที่อยู่', value: companyInfo.address },
+              {
+                icon: Share2,
+                label: 'Facebook',
+                value: companyInfo.facebook,
+                href: companyInfo.facebookUrl,
+                external: true,
+              },
+              {
+                icon: Mail,
+                label: 'อีเมล',
+                value: companyInfo.email,
+                href: `mailto:${companyInfo.email}`,
+              },
+              {
+                icon: MapPin,
+                label: 'ที่อยู่',
+                value: companyInfo.address,
+                href: mapDirectionsUrl,
+                external: true,
+              },
             ].map((item) => {
               const Icon = item.icon
               return (
-                <div key={item.label} className="surface rounded-lg p-5">
+                <a
+                  key={item.label}
+                  href={item.href}
+                  target={item.external ? '_blank' : undefined}
+                  rel={item.external ? 'noreferrer' : undefined}
+                  className="surface block rounded-lg p-5 transition hover:-translate-y-0.5 hover:border-[#B28A55]"
+                >
                   <p className="flex items-center gap-2 text-sm font-bold text-[#0E4F52]">
                     <Icon size={18} /> {item.label}
                   </p>
                   <p className="mt-2 font-bold text-[#0E4F52]">{item.value}</p>
-                </div>
+                </a>
               )
             })}
             <div className="surface rounded-lg p-5">
