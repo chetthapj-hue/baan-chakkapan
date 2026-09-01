@@ -35,11 +35,16 @@ const Footer = () => (
             <Phone size={16} /> {companyInfo.phone}
           </p>
           <p className="flex items-center gap-2">
-            <MessageCircle size={16} /> LINE {companyInfo.lineId}
+            <MessageCircle size={16} /> LINE ID{companyInfo.lineId}
           </p>
-          <p className="flex items-center gap-2">
+          <a
+            href={companyInfo.facebookUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2 hover:text-white"
+          >
             <Share2 size={16} /> {companyInfo.facebook}
-          </p>
+          </a>
           <p className="flex items-center gap-2">
             <Mail size={16} /> {companyInfo.email}
           </p>

@@ -32,7 +32,11 @@ const Navbar = () => {
           ))}
         </div>
         <div className="hidden items-center gap-3 md:flex">
-          <Link to="/contact" className="btn-secondary text-sm">
+          <Link
+            target="_blank"
+            to="https://www.facebook.com/ckpbuilding"
+            className="btn-secondary text-sm"
+          >
             ปรึกษาสร้างบ้าน
           </Link>
         </div>
