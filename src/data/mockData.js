@@ -470,6 +470,7 @@ export const companyInfo = {
   phone: '083 481 8025',
   lineId: 'jochak2028',
   facebook: 'บ้านจักรพันธ์',
+  facebookUrl: 'https://www.facebook.com/ckpbuilding',
   email: 'jochakkapan@gmail.com',
   hours: 'จันทร์-เสาร์ 08:00-17:00 น.',
   address: 'เชียงใหม่, Chiang Mai, Thailand, 50160',
