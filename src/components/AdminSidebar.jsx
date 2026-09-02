@@ -8,54 +8,54 @@ import {
   Mail,
   Settings,
   Users,
-} from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   getCurrentAdmin,
   getRoleLabel,
   isMainAdmin,
-} from '../services/adminUserService'
-import { logoutAdmin } from '../services/authService'
-import { getContactStats } from '../services/contactService'
-import Logo from './Logo'
+} from "../services/adminUserService";
+import { logoutAdmin } from "../services/authService";
+import { getContactStats } from "../services/contactService";
+import Logo from "./Logo";
 
 const adminNavClass = ({ isActive }) =>
   `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-bold transition ${
     isActive
-      ? 'bg-[#EAF4F2] text-[#0E4F52]'
-      : 'text-white/76 hover:bg-white/10 hover:text-white'
-  }`
+      ? "bg-[#EAF4F2] text-[#0E4F52]"
+      : "text-white/76 hover:bg-white/10 hover:text-white"
+  }`;
 
 const AdminSidebar = () => {
-  const navigate = useNavigate()
-  const currentAdmin = getCurrentAdmin()
-  const [unreadContacts, setUnreadContacts] = useState(0)
+  const navigate = useNavigate();
+  const currentAdmin = getCurrentAdmin();
+  const [unreadContacts, setUnreadContacts] = useState(0);
 
   useEffect(() => {
-    let active = true
+    let active = true;
 
     getContactStats()
       .then((stats) => {
-        if (active) setUnreadContacts(stats.unread || 0)
+        if (active) setUnreadContacts(stats.unread || 0);
       })
       .catch(() => {
-        if (active) setUnreadContacts(0)
-      })
+        if (active) setUnreadContacts(0);
+      });
 
     return () => {
-      active = false
-    }
-  }, [])
+      active = false;
+    };
+  }, []);
 
   const handleLogout = () => {
-    logoutAdmin()
-    navigate('/admin/login')
-  }
+    logoutAdmin();
+    navigate("/admin/login");
+  };
 
   return (
     <aside className="flex min-h-screen flex-col bg-[#0E4F52] p-5 text-white lg:sticky lg:top-0">
-      <div className="mb-8 rounded-lg bg-white p-3">
+      <div className="mb-8 rounded-lg bg-white/50 font-bold p-3">
         <Logo to="/" />
       </div>
       <nav className="grid gap-2">
@@ -109,7 +109,7 @@ const AdminSidebar = () => {
         <LogOut size={18} /> ออกจากระบบ
       </button>
     </aside>
-  )
-}
+  );
+};
 
-export default AdminSidebar
+export default AdminSidebar;
