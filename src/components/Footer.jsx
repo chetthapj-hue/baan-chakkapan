@@ -4,6 +4,9 @@ import { companyInfo } from "../data/mockData";
 import Logo from "./Logo";
 
 const phoneHref = `tel:${companyInfo.phone.replace(/\s/g, "")}`;
+const lineHref = companyInfo.lineAppUrl || companyInfo.lineUrl;
+const lineTarget = lineHref.startsWith("http") ? "_blank" : undefined;
+const lineRel = lineTarget ? "noreferrer" : undefined;
 
 const Footer = () => (
   <footer className="bg-[#0E4F52] text-white">
@@ -37,9 +40,9 @@ const Footer = () => (
             <Phone size={16} /> {companyInfo.phone}
           </a>
           <a
-            href={companyInfo.lineUrl}
-            target="_blank"
-            rel="noreferrer"
+            href={lineHref}
+            target={lineTarget}
+            rel={lineRel}
             className="flex items-center gap-2 hover:text-white"
           >
             <MessageCircle size={16} /> LINE ID {companyInfo.lineId}

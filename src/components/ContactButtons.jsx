@@ -2,15 +2,19 @@ import { Mail, MessageCircle, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import { companyInfo } from "../data/mockData";
 
+const lineHref = companyInfo.lineAppUrl || companyInfo.lineUrl;
+const lineTarget = lineHref.startsWith("http") ? "_blank" : undefined;
+const lineRel = lineTarget ? "noreferrer" : undefined;
+
 const ContactButtons = ({ className = "" }) => (
   <div className={`flex flex-wrap gap-3 ${className}`}>
     <a href={`tel:${companyInfo.phone}`} className="btn-primary">
       <Phone size={18} /> โทร {companyInfo.phone}
     </a>
     <a
-      href={companyInfo.lineUrl}
-      target="_blank"
-      rel="noreferrer"
+      href={lineHref}
+      target={lineTarget}
+      rel={lineRel}
       className="btn-secondary"
     >
       <MessageCircle size={18} /> LINE {companyInfo.lineId}

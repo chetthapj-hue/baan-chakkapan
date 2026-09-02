@@ -468,8 +468,9 @@ export const seedProjects = baseSeedProjects.map((project, index) => ({
 
 export const companyInfo = {
   phone: '083 481 8025',
-  lineId: '@833zubjm',
+  lineId: '@559uwqbw',
   lineUrl: 'https://line.me/R/ti/p/@559uwqbw',
+  lineAppUrl: 'line://ti/p/@559uwqbw',
   facebook: 'บ้านจักรพันธ์',
   facebookUrl: 'https://www.facebook.com/ckpbuilding',
   email: 'jochakkapan@gmail.com',

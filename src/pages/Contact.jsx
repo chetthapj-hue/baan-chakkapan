@@ -24,6 +24,8 @@ const Contact = () => {
   const mapDirectionsUrl =
     companyInfo.mapUrl ||
     `https://www.google.com/maps/search/?api=1&query=${mapQuery}`
+  const lineHref = companyInfo.lineAppUrl || companyInfo.lineUrl
+  const lineOpensNewTab = lineHref.startsWith('http')
 
   const validate = () => {
     const nextErrors = {}
@@ -106,8 +108,8 @@ const Contact = () => {
                 icon: MessageCircle,
                 label: 'LINE ID',
                 value: companyInfo.lineId,
-                href: companyInfo.lineUrl,
-                external: true,
+                href: lineHref,
+                external: lineOpensNewTab,
               },
               {
                 icon: Share2,
